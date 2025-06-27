@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>今日排行榜</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    h2 { margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; border: 1px solid #ccc; text-align: center; }
+  </style>
+</head>
+<body>
+  <h2>🎯 今日排行榜（{{ users|length }}人）</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>排名</th>
+        <th>用户</th>
+        <th>积分</th>
+        <th>今日对局</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ u.username or '匿名' }}</td>
+        <td>{{ u.points }}</td>
+        <td>{{ u.plays_today }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>
