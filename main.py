@@ -76,7 +76,7 @@ def admin():
             total = c.fetchone()[0]
             c.execute("SELECT COUNT(*) FROM users WHERE phone IS NOT NULL")
             verified = c.fetchone()[0]
-            c.execute("SELECT COUNT(*) FROM users WHERE blocked = 1")
+            c.execute("SELECT COUNT(*) FROM users WHERE blocked = TRUE")
             blocked = c.fetchone()[0]
             c.execute("SELECT SUM(points) FROM users")
             points = c.fetchone()[0] or 0
