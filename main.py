@@ -54,9 +54,10 @@ def admin():
     if keyword:
         query += " AND (username ILIKE %s OR phone ILIKE %s OR inviter ILIKE %s)"
         params += [f"%{keyword}%"] * 3
-    if filter_blocked in ("0", "1"):
-        query += " AND blocked = %s"
-        params.append(int(filter_blocked))
+    if filter_blocked == "1":
+        query += " AND blocked = TRUE"
+    elif filter_blocked == "0":
+        query += " AND blocked IS FALSE"
     if start_date:
         query += " AND created_at >= %s"
         params.append(start_date)
