@@ -13,6 +13,34 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localho
 def get_conn():
     return psycopg2.connect(DATABASE_URL)
 
+def init_tables():
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id BIGINT PRIMARY KEY,
+                    username TEXT,
+                    phone TEXT,
+                    points INTEGER DEFAULT 0,
+                    plays INTEGER DEFAULT 0,
+                    inviter TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_game_time TIMESTAMP,
+                    blocked BOOLEAN DEFAULT FALSE
+                );
+            """)
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS game_logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT,
+                    user_roll INTEGER,
+                    bot_roll INTEGER,
+                    result TEXT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+            conn.commit()
+    
 @app.route("/admin")
 def admin():
     keyword = request.args.get("q", "")
@@ -106,5 +134,6 @@ def index():
     return redirect(url_for("admin"))
 
 if __name__ == "__main__":
+    init_tables()  # 自动建表 ✅
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
