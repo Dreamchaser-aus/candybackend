@@ -87,8 +87,8 @@ async function deleteUser(userId) {
               <option value="1" {% if user.blocked %}selected{% endif %}>是</option>
             </select>
           </td>
-          <td>{{ user.created_at }}</td>
-          <td>{{ user.last_game_time }}</td>
+          <td>{{ user.created_at | format_datetime  }}</td>
+          <td>{{ user.last_game_time | format_datetime  }}</td>
           <td>{{ user.token or '无' }}</td>
           <td>
             <button class="btn btn-success btn-sm" onclick="saveUser('{{ user.user_id }}')">保存</button>
