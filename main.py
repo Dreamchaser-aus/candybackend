@@ -16,6 +16,7 @@ def get_conn():
 def init_tables():
     with get_conn() as conn:
         with conn.cursor() as c:
+            # 创建 users 表
             c.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     user_id BIGINT PRIMARY KEY,
@@ -24,11 +25,14 @@ def init_tables():
                     points INTEGER DEFAULT 0,
                     plays INTEGER DEFAULT 0,
                     inviter TEXT,
+                    token TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_game_time TIMESTAMP,
                     blocked BOOLEAN DEFAULT FALSE
                 );
             """)
+            
+            # 创建 game_logs 表
             c.execute("""
                 CREATE TABLE IF NOT EXISTS game_logs (
                     id SERIAL PRIMARY KEY,
@@ -39,7 +43,9 @@ def init_tables():
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 );
             """)
+            
             conn.commit()
+    print("✅ 数据表初始化完成")
     
 @app.route("/admin")
 def admin():
