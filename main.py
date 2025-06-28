@@ -25,11 +25,22 @@ def init_tables():
                     points INTEGER DEFAULT 0,
                     plays INTEGER DEFAULT 0,
                     inviter TEXT,
-                    token TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     last_game_time TIMESTAMP,
                     blocked BOOLEAN DEFAULT FALSE
                 );
+            """)
+            
+            # 确保 token 字段存在
+            c.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                                   WHERE table_name='users' AND column_name='token') THEN
+                        ALTER TABLE users ADD COLUMN token TEXT;
+                    END IF;
+                END
+                $$;
             """)
             
             # 创建 game_logs 表
