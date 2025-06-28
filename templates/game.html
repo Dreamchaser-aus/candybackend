@@ -45,9 +45,8 @@
         let gamePaused = true;
         let timerInterval = null;
         let selectedCell = null;
-        let dragStart = null;
 
-        // ✅ 写死 user_id（请先确保数据库有这条用户）
+        // ✅ 写死 user_id（请写数据库已有）
         let userId = '100001';
 
         const canvas = document.getElementById('gameCanvas');
@@ -82,29 +81,33 @@
                     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
                     ctx.strokeStyle = "#000";
                     ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
+
+                    if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
+                        ctx.strokeStyle = "#FFD700";
+                        ctx.lineWidth = 4;
+                        ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
+                    }
                 }
             }
         }
 
-        canvas.addEventListener('mousedown', handleMouseDown);
-        canvas.addEventListener('mouseup', handleMouseUp);
-
-        function handleMouseDown(e) {
+        canvas.addEventListener('click', (e) => {
             if (!gameActive || gamePaused) return;
             const pos = getCanvasPosition(e);
-            selectedCell = getCellFromPosition(pos.x, pos.y);
-            dragStart = selectedCell;
-        }
+            const cell = getCellFromPosition(pos.x, pos.y);
 
-        function handleMouseUp(e) {
-            if (!gameActive || gamePaused || !dragStart || !selectedCell) return;
-            if (!cellsEqual(dragStart, selectedCell)) {
-                swapCells(dragStart, selectedCell);
+            if (!selectedCell) {
+                selectedCell = cell;
+            } else if (cellsEqual(selectedCell, cell)) {
+                selectedCell = null;
+            } else if (areAdjacent(selectedCell, cell)) {
+                swapCells(selectedCell, cell);
+                selectedCell = null;
+            } else {
+                selectedCell = cell;
             }
-            dragStart = null;
-            selectedCell = null;
             render();
-        }
+        });
 
         function getCanvasPosition(e) {
             const rect = canvas.getBoundingClientRect();
@@ -124,6 +127,12 @@
             return cell1 && cell2 && cell1.row === cell2.row && cell1.col === cell2.col;
         }
 
+        function areAdjacent(cell1, cell2) {
+            const rowDiff = Math.abs(cell1.row - cell2.row);
+            const colDiff = Math.abs(cell1.col - cell2.col);
+            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+        }
+
         function swapCells(cell1, cell2) {
             const temp = grid[cell1.row][cell1.col];
             grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
@@ -131,6 +140,7 @@
             score += 10;
             movesLeft--;
             updateUI();
+            if (movesLeft <= 0) endGame();
         }
 
         function startTimer() {
