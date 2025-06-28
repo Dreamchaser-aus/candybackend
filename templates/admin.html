@@ -57,7 +57,7 @@ async function deleteUser(userId) {
     <table class="table table-bordered table-striped">
       <thead class="table-dark">
         <tr>
-          <th>用户ID</th><th>用户名</th><th>手机号</th><th>积分</th>
+          <th>用户ID</th><th>用户名</th><th>手机号</th><th>积分</th><th>当日最高积分</th>
           <th>剩余次数（token）</th><th>邀请人</th><th>已邀请</th><th>封禁状态</th>
           <th>注册时间</th><th>最后游戏时间</th><th>操作</th>
         </tr>
@@ -71,6 +71,7 @@ async function deleteUser(userId) {
           <td>
             <input type="number" id="points-{{ user.user_id }}" value="{{ user.points or 0 }}" class="form-control form-control-sm">
           </td>
+          <td>{{ user.daily_max_score }}</td>
           <td>
             <input type="number" id="token-{{ user.user_id }}" value="{{ user.token or 0 }}" class="form-control form-control-sm">
           </td>
