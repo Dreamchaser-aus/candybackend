@@ -156,6 +156,10 @@ def delete_user():
 @app.route("/")
 def index():
     return redirect(url_for("admin"))
+    
+@app.route("/game")
+def game():
+    return render_template("game.html")
 
 @app.route("/mock")
 def insert_mock_users():
