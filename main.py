@@ -94,6 +94,14 @@ def admin():
             for user in users:
                 c.execute("SELECT COUNT(*) FROM users WHERE inviter = %s", (str(user["user_id"]),))
                 user["invited_count"] = c.fetchone()[0]
+            # 查询当日最高分
+            c.execute("""
+                SELECT MAX(user_roll) 
+                FROM game_logs 
+                WHERE user_id = %s 
+                    AND timestamp::date = CURRENT_DATE
+            """, (user["user_id"],))
+            daily_max = c.fetchone()[0]
 
             # 原来的统计逻辑
             c.execute("SELECT COUNT(*) FROM users")
