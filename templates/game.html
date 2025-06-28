@@ -189,35 +189,13 @@
     </div>
 
     <script>
-    let userId = 'guest'; // 默认用户
-
-    if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.ready();  // 初始化 Telegram WebApp
-        const tgUser = Telegram.WebApp.initDataUnsafe?.user;
-
-        if (tgUser && tgUser.id) {
-            userId = tgUser.id;
-        } else {
-            alert("⚠️ 请从 Telegram 中打开游戏链接");
-        }
-    } else {
-        alert("⚠️ Telegram WebApp 未加载");
-    }
-        // Game configuration
         const GRID_SIZE = 8;
         const CELL_SIZE = 60;
-        const COLORS = [
-          '#e74c3c', // Red
-          '#f1c40f', // Yellow
-          '#3498db', // Blue
-          '#9b59b6', // Purple
-          '#2ecc71'  // Green
-        ];
+        const COLORS = ['#e74c3c', '#f1c40f', '#3498db', '#9b59b6', '#2ecc71'];
         const POINTS_PER_BLOCK = 10;
-        const GAME_TIME = 60; // seconds
+        const GAME_TIME = 60;
         const MAX_MOVES = 30;
 
-        // Game state
         let grid = [];
         let score = 0;
         let timeLeft = GAME_TIME;
@@ -229,13 +207,10 @@
         let gamePaused = true;
         let timerInterval = null;
 
-        // Canvas setup
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Initialize game
         function initGame() {
-            // 初始化网格
             grid = [];
             for (let row = 0; row < GRID_SIZE; row++) {
                 grid[row] = [];
@@ -243,25 +218,15 @@
                     grid[row][col] = Math.floor(Math.random() * COLORS.length);
                 }
             }
-
-            // 确保没有初始匹配
             removeInitialMatches();
-
-            // 初始化状态
             score = 0;
             timeLeft = GAME_TIME;
             movesLeft = MAX_MOVES;
-            gameActive = false;   // 初始未激活
+            gameActive = false;
             gamePaused = true;
-
-            // 停止旧的计时器（如果有）
             clearInterval(timerInterval);
-
-            // 更新 UI 和按钮
             updateUI();
             document.getElementById('controlButton').textContent = "Start Game";
-
-            // 首次渲染
             render();
         }
 
@@ -271,18 +236,14 @@
                 hasMatches = false;
                 for (let row = 0; row < GRID_SIZE; row++) {
                     for (let col = 0; col < GRID_SIZE; col++) {
-                        // Check horizontal matches
                         if (col <= GRID_SIZE - 3) {
-                            if (grid[row][col] === grid[row][col + 1] && 
-                                grid[row][col] === grid[row][col + 2]) {
+                            if (grid[row][col] === grid[row][col + 1] && grid[row][col] === grid[row][col + 2]) {
                                 grid[row][col] = Math.floor(Math.random() * COLORS.length);
                                 hasMatches = true;
                             }
                         }
-                        // Check vertical matches
                         if (row <= GRID_SIZE - 3) {
-                            if (grid[row][col] === grid[row + 1][col] && 
-                                grid[row][col] === grid[row + 2][col]) {
+                            if (grid[row][col] === grid[row + 1][col] && grid[row][col] === grid[row + 2][col]) {
                                 grid[row][col] = Math.floor(Math.random() * COLORS.length);
                                 hasMatches = true;
                             }
@@ -293,312 +254,64 @@
         }
 
         function render() {
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Draw grid
             for (let row = 0; row < GRID_SIZE; row++) {
                 for (let col = 0; col < GRID_SIZE; col++) {
                     const x = col * CELL_SIZE;
                     const y = row * CELL_SIZE;
-                    
-                    // Draw cell background
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    ctx.fillStyle = COLORS[grid[row][col]];
                     ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                    
-                    // Draw cell border
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.lineWidth = 1;
+                    ctx.strokeStyle = "#000";
                     ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-                    
-                    // Draw candy
-                    if (grid[row][col] !== null) {
-                        drawCandy(x + 5, y + 5, CELL_SIZE - 10, COLORS[grid[row][col]]);
-                    }
-                    
-                    // Highlight selected cell
-                    if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
-                        ctx.strokeStyle = '#FFD700';
-                        ctx.lineWidth = 3;
-                        ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-                    }
                 }
             }
         }
 
-        function drawCandy(x, y, size, color) {
-            const centerX = x + size / 2;
-            const centerY = y + size / 2;
-            const radius = size / 2 - 2;
-
-            // Create gradient
-            const gradient = ctx.createRadialGradient(
-                centerX - radius/3, centerY - radius/3, 0,
-                centerX, centerY, radius
-            );
-            gradient.addColorStop(0, lightenColor(color, 40));
-            gradient.addColorStop(1, color);
-
-            // Draw candy
-            ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Add shine effect
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.beginPath();
-            ctx.arc(centerX - radius/3, centerY - radius/3, radius/3, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        function lightenColor(color, percent) {
-            const num = parseInt(color.replace("#", ""), 16);
-            const amt = Math.round(2.55 * percent);
-            const R = (num >> 16) + amt;
-            const G = (num >> 8 & 0x00FF) + amt;
-            const B = (num & 0x0000FF) + amt;
-            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
-                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
-                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
-        }
-
-        // Mouse event handlers
         canvas.addEventListener('mousedown', handleMouseDown);
-        canvas.addEventListener('mousemove', handleMouseMove);
         canvas.addEventListener('mouseup', handleMouseUp);
 
-        // Touch event handlers for mobile
-        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
-        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        function handleMouseDown(e) {
+            if (!gameActive || gamePaused) return;
+            const pos = getCanvasPosition(e);
+            selectedCell = getCellFromPosition(pos.x, pos.y);
+            dragStart = selectedCell;
+        }
+
+        function handleMouseUp(e) {
+            if (!gameActive || gamePaused || !dragStart || !selectedCell) return;
+            if (!cellsEqual(dragStart, selectedCell)) {
+                attemptSwap(dragStart, selectedCell);
+            }
+            dragStart = null;
+            selectedCell = null;
+            render();
+        }
 
         function getCanvasPosition(e) {
             const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            
-            let clientX, clientY;
-            if (e.touches) {
-                clientX = e.touches[0].clientX;
-                clientY = e.touches[0].clientY;
-            } else {
-                clientX = e.clientX;
-                clientY = e.clientY;
-            }
-            
-            return {
-                x: (clientX - rect.left) * scaleX,
-                y: (clientY - rect.top) * scaleY
-            };
+            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
         }
 
         function getCellFromPosition(x, y) {
             const col = Math.floor(x / CELL_SIZE);
             const row = Math.floor(y / CELL_SIZE);
-            
             if (row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE) {
                 return { row, col };
             }
             return null;
         }
 
-        function handleMouseDown(e) {
-            if (!gameActive || gamePaused || animating) return;
-            
-            const pos = getCanvasPosition(e);
-            const cell = getCellFromPosition(pos.x, pos.y);
-            
-            if (cell) {
-                selectedCell = cell;
-                dragStart = cell;
-                render();
-            }
-        }
-
-        function handleMouseMove(e) {
-            if (!gameActive || gamePaused || animating || !dragStart) return;
-            
-            const pos = getCanvasPosition(e);
-            const cell = getCellFromPosition(pos.x, pos.y);
-            
-            if (cell && !cellsEqual(cell, dragStart)) {
-                selectedCell = cell;
-                render();
-            }
-        }
-
-        function handleMouseUp(e) {
-            if (!gameActive || gamePaused || animating || !dragStart || !selectedCell) return;
-            
-            if (!cellsEqual(dragStart, selectedCell)) {
-                attemptSwap(dragStart, selectedCell);
-            }
-            
-            dragStart = null;
-            selectedCell = null;
-            render();
-        }
-
-        function handleTouchStart(e) {
-            if (!gameActive || gamePaused || animating) return;
-            e.preventDefault();
-            handleMouseDown(e);
-        }
-
-        function handleTouchMove(e) {
-            if (!gameActive || gamePaused || animating || !dragStart) return;
-            e.preventDefault();
-            handleMouseMove(e);
-        }
-
-        function handleTouchEnd(e) {
-            if (!gameActive || gamePaused || animating || !dragStart || !selectedCell) return;
-            e.preventDefault();
-            handleMouseUp(e);
-        }
-
         function cellsEqual(cell1, cell2) {
-            return cell1.row === cell2.row && cell1.col === cell2.col;
-        }
-
-        function areAdjacent(cell1, cell2) {
-            const rowDiff = Math.abs(cell1.row - cell2.row);
-            const colDiff = Math.abs(cell1.col - cell2.col);
-            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+            return cell1 && cell2 && cell1.row === cell2.row && cell1.col === cell2.col;
         }
 
         function attemptSwap(cell1, cell2) {
-            if (!areAdjacent(cell1, cell2)) return;
-            
-            // Swap cells
             const temp = grid[cell1.row][cell1.col];
             grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
             grid[cell2.row][cell2.col] = temp;
-            
-            // Check for matches
-            const matches = findMatches();
-            
-            if (matches.length === 0) {
-                // No matches, swap back
-                const temp = grid[cell1.row][cell1.col];
-                grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
-                grid[cell2.row][cell2.col] = temp;
-            } else {
-                // Valid move
-                movesLeft--;
-                updateUI();
-                processCascade();
-            }
-            
-            render();
-        }
-
-        function findMatches() {
-            const matches = [];
-            const visited = new Set();
-
-            // Check horizontal matches
-            for (let row = 0; row < GRID_SIZE; row++) {
-                let count = 1;
-                let currentColor = grid[row][0];
-                
-                for (let col = 1; col < GRID_SIZE; col++) {
-                    if (grid[row][col] === currentColor && currentColor !== null) {
-                        count++;
-                    } else {
-                        if (count >= 3) {
-                            for (let i = col - count; i < col; i++) {
-                                matches.push({ row, col: i });
-                            }
-                        }
-                        count = 1;
-                        currentColor = grid[row][col];
-                    }
-                }
-                
-                if (count >= 3) {
-                    for (let i = GRID_SIZE - count; i < GRID_SIZE; i++) {
-                        matches.push({ row, col: i });
-                    }
-                }
-            }
-
-            // Check vertical matches
-            for (let col = 0; col < GRID_SIZE; col++) {
-                let count = 1;
-                let currentColor = grid[0][col];
-                
-                for (let row = 1; row < GRID_SIZE; row++) {
-                    if (grid[row][col] === currentColor && currentColor !== null) {
-                        count++;
-                    } else {
-                        if (count >= 3) {
-                            for (let i = row - count; i < row; i++) {
-                                matches.push({ row: i, col });
-                            }
-                        }
-                        count = 1;
-                        currentColor = grid[row][col];
-                    }
-                }
-                
-                if (count >= 3) {
-                    for (let i = GRID_SIZE - count; i < GRID_SIZE; i++) {
-                        matches.push({ row: i, col });
-                    }
-                }
-            }
-
-            return matches;
-        }
-
-        function processCascade() {
-            animating = true;
-            
-            const cascade = () => {
-                const matches = findMatches();
-                
-                if (matches.length === 0) {
-                    animating = false;
-                    checkGameEnd();
-                    return;
-                }
-
-                // Remove matches and add to score
-                matches.forEach(match => {
-                    grid[match.row][match.col] = null;
-                    score += POINTS_PER_BLOCK;
-                });
-
-                // Apply gravity
-                for (let col = 0; col < GRID_SIZE; col++) {
-                    let writePos = GRID_SIZE - 1;
-                    
-                    for (let row = GRID_SIZE - 1; row >= 0; row--) {
-                        if (grid[row][col] !== null) {
-                            grid[writePos][col] = grid[row][col];
-                            if (writePos !== row) {
-                                grid[row][col] = null;
-                            }
-                            writePos--;
-                        }
-                    }
-                    
-                    // Fill empty spaces with new candies
-                    for (let row = 0; row <= writePos; row++) {
-                        grid[row][col] = Math.floor(Math.random() * COLORS.length);
-                    }
-                }
-
-                updateUI();
-                render();
-                
-                // Continue cascade after animation delay
-                setTimeout(cascade, 300);
-            };
-
-            cascade();
+            score += POINTS_PER_BLOCK;
+            movesLeft--;
+            updateUI();
         }
 
         function startTimer() {
@@ -620,67 +333,36 @@
             document.getElementById('moves').textContent = movesLeft;
         }
 
-        function checkGameEnd() {
-            if (movesLeft <= 0 || timeLeft <= 0) {
-                endGame();
-            }
-        }
-
         function endGame() {
             gameActive = false;
             document.getElementById('finalScore').textContent = score;
-            document.getElementById('gameOverModal').style.display = 'flex';
-            // 提交分数给后端
-            let userId = 'guest';
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                userId = window.Telegram.WebApp.initDataUnsafe.user?.id || 'guest';
-            }
-            // Submit score
-            submitScore();
-        }
-
-        function refreshData(data){
-            $('#points').text(data.points);
-            $('#token').text(data.token);
-            $('#result').html(`你得了 ${data.score} 分，结果：<strong>${data.result}</strong>`);
-        }
-
-        function maskName(username, phone) {
-            if (username) return username.slice(0, 4) + '***';
-            if (phone) return phone.slice(0, 4) + '***';
-            return '匿名';
-        } 
-
-        function loadRanking() {
-          $.getJSON('https://candybackend-production.up.railway.app/rank', function(data) {
-            let html = '';
-            data.forEach((row, i) => {
-              html += `<tr><td>${i + 1}</td><td>${maskName(row.username, row.phone)}</td><td>${row.points}</td></tr>`;
-            });
-            $('#rankBody').html(html);
-          });
-        }
-        
-        function submitScore() {
-            let userId = 'guest';
-            if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
-                userId = window.Telegram.WebApp.initDataUnsafe.user?.id || 'guest';
-            }
-
-            $.post("https://candybackend-production.up.railway.app/play", {
-                user_id: userId,
-                score: score  // ✅ 确保发送 score
-            }, function(data) {
-                refreshData(data);
-            }).fail(function(err) {
-                alert("提交失败: " + (err.responseJSON?.error || "未知错误"));
-            });
+            document.getElementById('gameOverModal').style.display = 'block';
         }
 
         function restartGame() {
             document.getElementById('gameOverModal').style.display = 'none';
             initGame();
         }
+
+        document.getElementById('controlButton').addEventListener('click', () => {
+            const btn = document.getElementById('controlButton');
+            if (!gameActive) {
+                gameActive = true;
+                gamePaused = false;
+                btn.textContent = "Pause";
+                startTimer();
+                return;
+            }
+            if (gamePaused) {
+                gamePaused = false;
+                btn.textContent = "Pause";
+                startTimer();
+            } else {
+                gamePaused = true;
+                btn.textContent = "Continue";
+                clearInterval(timerInterval);
+            }
+        });
 
         // Start the game
         initGame();
