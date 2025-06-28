@@ -167,7 +167,7 @@ def insert_mock_users():
                 phone = f"04123456{i:02d}"
                 points = i * 10
                 plays = i % 5
-                inviter = f"user{(i-1) if i > 1 else ''}" or None
+                inviter = str(100000 + i - 1) if i > 1 else None  # ✅ 改这里
                 created_at = datetime.now()
                 last_game_time = datetime.now()
                 blocked = (i % 3 == 0)
