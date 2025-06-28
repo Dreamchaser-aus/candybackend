@@ -2,7 +2,6 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Telegram 用户后台管理</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -10,11 +9,12 @@
 async function saveUser(userId) {
   const blocked = document.getElementById('blocked-' + userId).value;
   const points = document.getElementById('points-' + userId).value;
-  const plays = document.getElementById('plays-' + userId).value;
+  const token = document.getElementById('token-' + userId).value;
+
   await fetch(`/user/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ user_id: userId, blocked, points, plays })
+    body: JSON.stringify({ user_id: userId, blocked, points, token })
   });
   alert('✅ 已保存');
 }
@@ -47,7 +47,7 @@ async function deleteUser(userId) {
   <div class="mb-3">
   <a href="/admin" class="btn btn-sm btn-secondary">&#128260; 刷新</a>
   <a href="/admin/rank/today" class="btn btn-sm btn-primary">&#128200; 今日排行榜</a>
-  <a href="/mock" class="btn btn-sm btn-success">&#128295; 生成测试数据</a>
+  <a href="/mock" class="btn btn-sm btn-warning">&#9881;&#65039; 插入模拟用户</a>
 </div>  
 
     <div class="alert alert-info">
@@ -58,8 +58,8 @@ async function deleteUser(userId) {
       <thead class="table-dark">
         <tr>
           <th>用户ID</th><th>用户名</th><th>手机号</th><th>积分</th>
-          <th>今日游戏次数</th><th>邀请人</th><th>已邀请</th><th>封禁状态</th>
-          <th>注册时间</th><th>最后游戏时间</th><th>Token</th><th>操作</th>
+          <th>剩余次数（token）</th><th>邀请人</th><th>已邀请</th><th>封禁状态</th>
+          <th>注册时间</th><th>最后游戏时间</th><th>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -72,13 +72,13 @@ async function deleteUser(userId) {
             <input type="number" id="points-{{ user.user_id }}" value="{{ user.points or 0 }}" class="form-control form-control-sm">
           </td>
           <td>
-            <input type="number" id="plays-{{ user.user_id }}" value="{{ user.plays or 0 }}" class="form-control form-control-sm">
+            <input type="number" id="token-{{ user.user_id }}" value="{{ user.token or 0 }}" class="form-control form-control-sm">
           </td>
           <td>{{ user.inviter or '无' }}</td>
           <td>
             已邀请 {{ user.invited_count }} 人
             {% if (user.invited_count or 0) > 0 %}
-              <a class="btn btn-sm btn-primary" href="/invitees?user_id={{ user.user_id }}">查看邀请用户</a>
+              <a class="btn btn-sm btn-primary" href="/invitees?user_id={{ user.user_id }}">查看</a>
             {% endif %}
           </td>
           <td>
@@ -87,38 +87,17 @@ async function deleteUser(userId) {
               <option value="1" {% if user.blocked %}selected{% endif %}>是</option>
             </select>
           </td>
-          <td>{{ user.created_at | format_datetime  }}</td>
-          <td>{{ user.last_game_time | format_datetime  }}</td>
-          <td>{{ user.token or '无' }}</td>
+          <td>{{ user.created_at | format_datetime }}</td>
+          <td>{{ user.last_game_time | format_datetime }}</td>
           <td>
             <button class="btn btn-success btn-sm" onclick="saveUser('{{ user.user_id }}')">保存</button>
             <button class="btn btn-danger btn-sm" onclick="deleteUser('{{ user.user_id }}')">删除</button>
-            <a class="btn btn-info btn-sm mt-1" href="/user/logs?user_id={{ user.user_id }}">查看游戏记录</a>
+            <a class="btn btn-info btn-sm mt-1" href="/user/logs?user_id={{ user.user_id }}">游戏记录</a>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
-  <nav aria-label="分页导航">
-    <ul class="pagination justify-content-center mt-4">
-    {% if page > 1 %}
-    <li class="page-item">
-      <a class="page-link" href="/admin?q={{ keyword }}&start_date={{ request.args.get('start_date', '') }}&end_date={{ request.args.get('end_date', '') }}&filter={{ request.args.get('filter', '') }}&page={{ page - 1 }}">上一页</a>
-    </li>
-    {% endif %}
-    {% for p in range(1, total_pages + 1) %}
-    <li class="page-item {% if p == page %}active{% endif %}">
-      <a class="page-link" href="/admin?q={{ keyword }}&start_date={{ request.args.get('start_date', '') }}&end_date={{ request.args.get('end_date', '') }}&filter={{ request.args.get('filter', '') }}&page={{ p }}">{{ p }}</a>
-    </li>
-    {% endfor %}
-    {% if page < total_pages %}
-    <li class="page-item">
-      <a class="page-link" href="/admin?q={{ keyword }}&start_date={{ request.args.get('start_date', '') }}&end_date={{ request.args.get('end_date', '') }}&filter={{ request.args.get('filter', '') }}&page={{ page + 1 }}">下一页</a>
-    </li>
-    {% endif %}
-  </ul>
-</nav>
 </body>
 </html>
-
