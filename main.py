@@ -161,6 +161,41 @@ def index():
 def game():
     return render_template("game.html")
 
+@app.route("/play", methods=["POST"])
+def play_game():
+    user_id = request.form.get("user_id")
+    score = int(request.form.get("score", 0))
+
+    if not user_id:
+        return jsonify({"error": "缺少 user_id"}), 400
+
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT points, plays FROM users WHERE user_id = %s", (user_id,))
+            result = c.fetchone()
+            if not result:
+                return jsonify({"error": "用户不存在"}), 404
+            
+            old_points, old_plays = result
+            new_points = (old_points or 0) + score
+            new_plays = (old_plays or 0) + 1
+
+            c.execute("UPDATE users SET points = %s, plays = %s, last_game_time = NOW() WHERE user_id = %s",
+                      (new_points, new_plays, user_id))
+            conn.commit()
+
+            c.execute("SELECT username, phone, points FROM users WHERE user_id = %s", (user_id,))
+            user = c.fetchone()
+            data = {
+                "username": user[0],
+                "phone": user[1],
+                "points": user[2],
+                "score": score,
+                "result": "成功提交",
+                "token": "无"
+            }
+    return jsonify(data)
+
 @app.route("/mock")
 def insert_mock_users():
     with get_conn() as conn:
