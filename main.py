@@ -84,26 +84,26 @@ def admin():
 
     query += " ORDER BY created_at DESC"
 
-   with get_conn() as conn:
-    with conn.cursor() as c:
-        c.execute(query, params)
-        rows = c.fetchall()
-        users = [dict(zip([desc[0] for desc in c.description], row)) for row in rows]
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            c.execute(query, params)
+            rows = c.fetchall()
+            users = [dict(zip([desc[0] for desc in c.description], row)) for row in rows]
 
-        # ✅ 新增：为每个用户查询被邀请人数
-        for user in users:
-            c.execute("SELECT COUNT(*) FROM users WHERE inviter = %s", (str(user["user_id"]),))
-            user["invited_count"] = c.fetchone()[0]
+            # ✅ 新增：为每个用户查询被邀请人数
+            for user in users:
+                c.execute("SELECT COUNT(*) FROM users WHERE inviter = %s", (str(user["user_id"]),))
+                user["invited_count"] = c.fetchone()[0]
 
-        # 原来的统计逻辑
-        c.execute("SELECT COUNT(*) FROM users")
-        total = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM users WHERE phone IS NOT NULL")
-        verified = c.fetchone()[0]
-        c.execute("SELECT COUNT(*) FROM users WHERE blocked = TRUE")
-        blocked = c.fetchone()[0]
-        c.execute("SELECT SUM(points) FROM users")
-        points = c.fetchone()[0] or 0
+            # 原来的统计逻辑
+            c.execute("SELECT COUNT(*) FROM users")
+            total = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM users WHERE phone IS NOT NULL")
+            verified = c.fetchone()[0]
+            c.execute("SELECT COUNT(*) FROM users WHERE blocked = TRUE")
+            blocked = c.fetchone()[0]
+            c.execute("SELECT SUM(points) FROM users")
+            points = c.fetchone()[0] or 0
 
     stats = {"total": total, "verified": verified, "blocked": blocked, "points": points}
     return render_template("admin.html", users=users, stats=stats, request=request, keyword=keyword, page=1, total_pages=1)
