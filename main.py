@@ -206,28 +206,11 @@ def play_game():
             }
     return jsonify(data)
 
-@app.route("/mock")
-def insert_mock_users():
-    with get_conn() as conn:
-        with conn.cursor() as c:
-            for i in range(1, 11):
-                user_id = 100000 + i
-                username = f"user{i}"
-                phone = f"04123456{i:02d}"
-                points = i * 10
-                plays = i % 5
-                inviter = str(100000 + i - 1) if i > 1 else None  # ✅ 这里改成 user_id 数字
-                created_at = datetime.now()
-                last_game_time = datetime.now()
-                blocked = (i % 3 == 0)
-
-                c.execute("""
-                    INSERT INTO users (user_id, username, phone, points, plays, inviter, created_at, last_game_time, blocked)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (user_id) DO NOTHING
-                """, (user_id, username, phone, points, plays, inviter, created_at, last_game_time, blocked))
-            conn.commit()
-    return "✅ 已成功插入 10 个模拟用户"
+@app.template_filter('format_datetime')
+def format_datetime(value):
+    if not value:
+        return ""
+    return value.strftime("%Y-%m-%d %H:%M:%S")
 
 if __name__ == "__main__":
     init_tables()  # 自动建表 ✅
