@@ -47,7 +47,7 @@ async function deleteUser(userId) {
   <div class="mb-3">
   <a href="/admin" class="btn btn-sm btn-secondary">&#128260; 刷新</a>
   <a href="/admin/rank/today" class="btn btn-sm btn-primary">&#128200; 今日排行榜</a>
-  <a href="/init" class="btn btn-sm btn-warning">&#9881;&#65039; 初始化表结构</a>
+  <a href="/mock" class="btn btn-sm btn-success">&#128295; 生成测试数据</a>
 </div>  
 
     <div class="alert alert-info">
@@ -59,7 +59,7 @@ async function deleteUser(userId) {
         <tr>
           <th>用户ID</th><th>用户名</th><th>手机号</th><th>积分</th>
           <th>今日游戏次数</th><th>邀请人</th><th>已邀请</th><th>封禁状态</th>
-          <th>注册时间</th><th>最后游戏时间</th><th>操作</th>
+          <th>注册时间</th><th>最后游戏时间</th><th>Token</th><th>操作</th>
         </tr>
       </thead>
       <tbody>
@@ -89,6 +89,7 @@ async function deleteUser(userId) {
           </td>
           <td>{{ user.created_at }}</td>
           <td>{{ user.last_game_time }}</td>
+          <td>{{ user.token or '无' }}</td>
           <td>
             <button class="btn btn-success btn-sm" onclick="saveUser('{{ user.user_id }}')">保存</button>
             <button class="btn btn-danger btn-sm" onclick="deleteUser('{{ user.user_id }}')">删除</button>
