@@ -652,7 +652,7 @@
         } 
 
         function loadRanking() {
-          $.getJSON('https://h5game-backend-production.up.railway.app/api/rank', function(data) {
+          $.getJSON('https://candybackend-production.up.railway.app/rank', function(data) {
             let html = '';
             data.forEach((row, i) => {
               html += `<tr><td>${i + 1}</td><td>${maskName(row.username, row.phone)}</td><td>${row.points}</td></tr>`;
@@ -667,7 +667,7 @@
                 userId = window.Telegram.WebApp.initDataUnsafe.user?.id || 'guest';
             }
 
-            $.post("https://h5game-backend-production.up.railway.app/play", {
+            $.post("https://candybackend-production.up.railway.app/play", {
                 user_id: userId,
                 score: score  // ✅ 确保发送 score
             }, function(data) {
