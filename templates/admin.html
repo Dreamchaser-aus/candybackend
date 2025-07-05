@@ -1,110 +1,149 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <title>后台管理系统</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- 引入 Bootstrap 5 -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: #f4f8fb;
-            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
-        }
-        .navbar-brand {
-            font-weight: bold;
-            font-size: 1.5rem;
-            letter-spacing: 1px;
-        }
-        .card {
-            border-radius: 18px;
-            box-shadow: 0 4px 20px 0 #e6ecf5;
-            margin-bottom: 2rem;
-        }
-        .table {
-            border-radius: 12px;
-            overflow: hidden;
-            background: #fff;
-        }
-        .table thead {
-            background: #eaf1fb;
-            font-weight: bold;
-        }
-        .table-hover tbody tr:hover {
-            background: #f0f8ff;
-            transition: background 0.2s;
-        }
-        .btn-primary {
-            border-radius: 1.5rem;
-            padding: 0.4rem 1.5rem;
-            font-weight: 500;
-            font-size: 1rem;
-            box-shadow: 0 2px 8px 0 #bad3f6;
-            transition: background 0.2s;
-        }
-        .btn-primary:hover {
-            background: #2366d1;
-        }
-        @media (max-width: 768px) {
-            .container {
-                padding: 0.5rem;
-            }
-            .card {
-                padding: 0.5rem;
-                border-radius: 10px;
-            }
-            .navbar-brand {
-                font-size: 1.1rem;
-            }
-            .table {
-                font-size: 0.95rem;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Telegram 用户后台管理</title>
+  <!-- Bootstrap5 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <style>
+    body { background: #f6f7fb; font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;}
+    .navbar { box-shadow: 0 2px 10px 0 #eaeaea; }
+    .card { border-radius: 18px; box-shadow: 0 2px 12px 0 #e3e9f5;}
+    .stats-bar { font-size: 1.05rem; background: #f0f6ff; border-radius: 12px; }
+    .table thead th { background: #eaf1fb !important; font-weight: bold;}
+    .table-bordered { border-radius: 12px; overflow: hidden;}
+    .btn, .form-select, .form-control { border-radius: 1.5rem;}
+    .btn-primary, .btn-success, .btn-danger, .btn-info { font-weight: 500;}
+    .btn-sm { font-size: 0.92rem;}
+    .table-hover tbody tr:hover { background: #f5f8fe;}
+    @media (max-width: 900px) {
+      .container { padding: 0.6rem;}
+      .table { font-size: 0.97rem;}
+      .navbar-brand { font-size: 1.08rem;}
+      .card { padding: 0.5rem;}
+    }
+    @media (max-width: 600px) {
+      .table-responsive { font-size: 0.93rem;}
+      .stats-bar { font-size: 0.98rem;}
+    }
+  </style>
+  <script>
+async function saveUser(userId) {
+  const blocked = document.getElementById('blocked-' + userId).value;
+  const points = document.getElementById('points-' + userId).value;
+  const token = document.getElementById('token-' + userId).value;
+
+  await fetch(`/user/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, blocked, points, token })
+  });
+  alert('✅ 已保存');
+}
+
+async function deleteUser(userId) {
+  if (!confirm('确认删除该用户吗？')) return;
+  await fetch(`/user/delete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId })
+  });
+  location.reload();
+}
+  </script>
 </head>
 <body>
-<nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm mb-4">
+  <!-- 顶部导航栏 -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
     <div class="container">
-        <a class="navbar-brand" href="#">后台管理系统</a>
-        <div class="ms-auto">
-            <a href="/" class="btn btn-outline-primary me-2">返回首页</a>
-            <a href="/logout" class="btn btn-primary">登出</a>
-        </div>
+      <a class="navbar-brand fw-bold text-primary" href="#">Telegram 用户后台管理</a>
+      <div class="ms-auto">
+        <a href="/admin" class="btn btn-outline-secondary btn-sm me-2">&#128260; 刷新</a>
+        <a href="/admin/rank/today" class="btn btn-outline-primary btn-sm me-2">&#128200; 今日排行榜</a>
+        <a href="/mock" class="btn btn-warning btn-sm">&#9881;&#65039; 插入模拟用户</a>
+      </div>
     </div>
-</nav>
-
-<div class="container">
-    <div class="card p-4">
-        <h3 class="mb-4">用户数据表</h3>
-        <!-- 表格示例 -->
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>用户ID</th>
-                        <th>用户名</th>
-                        <th>手机号</th>
-                        <th>积分</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- 循环渲染数据 -->
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.id }}</td>
-                        <td>{{ user.username }}</td>
-                        <td>{{ user.phone }}</td>
-                        <td>{{ user.score }}</td>
-                        <td>
-                            <a href="/user/{{ user.id }}" class="btn btn-sm btn-outline-primary">详情</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+  </nav>
+  <div class="container" style="max-width: 98vw;">
+    <div class="card p-4 mb-4">
+      <!-- 搜索表单 -->
+      <form class="row g-2 align-items-center mb-3" method="get" action="/admin">
+        <div class="col-12 col-md-4">
+          <input type="text" class="form-control" name="q" placeholder="用户名 / 手机号 / 邀请人用户名" value="{{ request.args.q or '' }}">
         </div>
+        <div class="col-6 col-md-2">
+          <input type="date" class="form-control" name="start_date" value="{{ request.args.get('start_date', '') }}" title="注册起始日期">
+        </div>
+        <div class="col-6 col-md-2">
+          <input type="date" class="form-control" name="end_date" value="{{ request.args.get('end_date', '') }}" title="注册结束日期">
+        </div>
+        <div class="col-6 col-md-2">
+          <select class="form-select" name="filter">
+            <option value="">全部</option>
+            <option value="0" {% if request.args.filter == '0' %}selected{% endif %}>未封禁</option>
+            <option value="1" {% if request.args.filter == '1' %}selected{% endif %}>已封禁</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <button class="btn btn-primary w-100" type="submit">搜索</button>
+        </div>
+      </form>
+      <!-- 数据统计栏 -->
+      <div class="stats-bar px-3 py-2 mb-3 border">
+        总用户数: <b>{{ stats.total }}</b> &nbsp;|&nbsp; 已授权手机号: <b class="text-success">{{ stats.verified }}</b>
+        &nbsp;|&nbsp; 已封禁用户: <b class="text-danger">{{ stats.blocked }}</b> &nbsp;|&nbsp; 总积分: <b class="text-primary">{{ stats.points }}</b>
+      </div>
+      <!-- 用户表格 -->
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>用户ID</th><th>用户名</th><th>手机号</th><th>积分</th><th>当日最高积分</th>
+              <th>剩余次数（token）</th><th>邀请人</th><th>已邀请</th><th>封禁状态</th>
+              <th>注册时间</th><th>最后游戏时间</th><th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+            <tr>
+              <td>{{ user.user_id }}</td>
+              <td>{{ user.username }}</td>
+              <td>{{ user.phone or '未授权' }}</td>
+              <td>
+                <input type="number" id="points-{{ user.user_id }}" value="{{ user.points or 0 }}" class="form-control form-control-sm">
+              </td>
+              <td>{{ user.daily_max_score }}</td>
+              <td>
+                <input type="number" id="token-{{ user.user_id }}" value="{{ user.token or 0 }}" class="form-control form-control-sm">
+              </td>
+              <td>{{ user.inviter or '无' }}</td>
+              <td>
+                已邀请 {{ user.invited_count }} 人
+                {% if (user.invited_count or 0) > 0 %}
+                  <a class="btn btn-sm btn-outline-primary ms-1" href="/invitees?user_id={{ user.user_id }}">查看</a>
+                {% endif %}
+              </td>
+              <td>
+                <select id="blocked-{{ user.user_id }}" class="form-select form-select-sm">
+                  <option value="0" {% if not user.blocked %}selected{% endif %}>否</option>
+                  <option value="1" {% if user.blocked %}selected{% endif %}>是</option>
+                </select>
+              </td>
+              <td>{{ user.created_at | format_datetime }}</td>
+              <td>{{ user.last_game_time | format_datetime }}</td>
+              <td>
+                <button class="btn btn-success btn-sm mb-1" onclick="saveUser('{{ user.user_id }}')">保存</button>
+                <button class="btn btn-danger btn-sm mb-1" onclick="deleteUser('{{ user.user_id }}')">删除</button>
+                <a class="btn btn-info btn-sm mt-1" href="/user/logs?user_id={{ user.user_id }}">游戏记录</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
-</div>
+  </div>
 </body>
 </html>
