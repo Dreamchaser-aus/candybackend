@@ -212,6 +212,8 @@ def game():
 def play_game():
     user_id = request.form.get("user_id")
     score = int(request.form.get("score", 0))
+    # 新增：支持指定游戏名，默认“骰子对赌”
+    game_name = request.form.get("game_name", "骰子对赌")
 
     if not user_id:
         return jsonify({"error": "缺少 user_id"}), 400
@@ -228,15 +230,15 @@ def play_game():
             new_points = (old_points or 0) + score
             new_plays = (old_plays or 0) + 1
 
-            # ✅ 更新用户积分、次数、时间
+            # 更新用户积分、次数、时间
             c.execute("UPDATE users SET points = %s, plays = %s, last_game_time = NOW() WHERE user_id = %s",
                       (new_points, new_plays, user_id))
 
-            # ✅ 插入 game_logs 表
+            # 插入 game_logs 表，新增 game_name 字段
             c.execute("""
-                INSERT INTO game_logs (user_id, user_roll, bot_roll, result, timestamp)
-                VALUES (%s, %s, %s, %s, NOW())
-            """, (user_id, score, 0, '游戏结束'))
+                INSERT INTO game_logs (user_id, user_roll, bot_roll, result, timestamp, game_name)
+                VALUES (%s, %s, %s, %s, NOW(), %s)
+            """, (user_id, score, 0, '游戏结束', game_name))
 
             conn.commit()
 
