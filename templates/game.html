@@ -8,23 +8,21 @@
     html,body { background: linear-gradient(120deg, #23243a 0%, #1c2037 100%);
       color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
     h1 {text-align:center; letter-spacing:2px; margin:1.2em 0 0.5em; font-weight:800; text-shadow:0 4px 22px #5d7aff55;}
-    .game-box { background:rgba(30,34,55,0.98); border-radius:24px; margin:0 auto; max-width:650px; box-shadow:0 8px 38px #0009; padding:22px 18px 18px 18px;}
-    canvas {
+    .game-box { background:rgba(30,34,55,0.98); border-radius:24px; margin:0 auto; max-width:480px; box-shadow:0 8px 38px #0009; padding:18px 8px 16px 8px;}
+    #gameCanvas {
       background: linear-gradient(160deg,#252845 80%,#1d1e30 100%);
-      display:block; margin:0 auto 16px auto; border-radius:22px; box-shadow:0 8px 32px #4349c033,0 1.5px 4px #0007;
+      display:block; margin:0 auto 18px auto; border-radius:22px; box-shadow:0 8px 32px #4349c033,0 1.5px 4px #0007;
       touch-action: none;   /* 禁止所有手势操作 */
-      -ms-touch-action: none;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      min-width: 240px; min-height: 240px;
+      user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+      width: 100%; height: auto; aspect-ratio: 1/1; /* 保证正方形 */
+      min-width: 240px; max-width: 98vw;
     }
     #scorebar {
-      font-size:1.14rem; letter-spacing:.03em; display:flex; justify-content:center; gap:1.9em; margin-bottom:14px;
+      font-size:1.14rem; letter-spacing:.03em; display:flex; justify-content:center; gap:1.6em; margin-bottom:10px;
       background:rgba(255,255,255,0.11); border-radius:16px; box-shadow:0 0.5px 4px #2234d044; padding:7px 0 3px 0;
       font-weight:600;
     }
-    #gameOverModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(20,18,34,0.98);
+    #gameOverModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(20,18,34,0.97);
       color: #fff; display: none; justify-content: center; align-items: center; flex-direction: column; z-index:99; }
     #gameOverModal button { padding: 13px 36px; margin-top: 28px; background: linear-gradient(90deg,#28c7fa,#5468ff 95%);
       color: white; border: none; border-radius: 10px; font-size:1.13rem; cursor: pointer; font-weight:700; box-shadow:0 2px 10px #28c7fa22;}
@@ -33,16 +31,16 @@
       background:linear-gradient(90deg,#ffd048,#ff7e54); color:#222; border:0; border-radius:12px;
       font-weight:700; box-shadow:0 1px 9px #ffd0483c; cursor:pointer; transition:.16s;}
     #controlButton:hover { background:linear-gradient(90deg,#ffe95a,#ffad54);}
-    @media (max-width: 800px) {
+    @media (max-width: 540px) {
       .game-box {max-width:99vw;}
-      canvas { width:98vw !important; height:98vw !important; max-width:98vw !important; max-height:98vw !important;}
+      #gameCanvas {min-width: 140px;}
     }
   </style>
 </head>
 <body>
   <h1>三消积分游戏</h1>
   <div class="game-box">
-    <canvas id="gameCanvas" width="480" height="480"></canvas>
+    <canvas id="gameCanvas"></canvas>
     <div id="scorebar">
         <span>分数: <b id="score">0</b></span>
         <span>步数: <b id="moves">30</b></span>
@@ -56,16 +54,11 @@
       <p style="font-size:1.18rem;margin-top:6px;">你的分数: <span id="finalScore"></span></p>
       <button onclick="restartGame()">再玩一次</button>
   </div>
-
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-  // 防止微信/安卓浏览器双指缩放和下拉页面
-  document.addEventListener('touchmove', function(e){
-    if (e.target === canvas) e.preventDefault();
-  }, {passive:false});
-
+  // 关键适配逻辑
   const GRID_SIZE = 8;
-  const CELL_SIZE = 56;
+  let CELL_SIZE = 56;  // 默认，后面自适应
   const PADDING = 14;
   const COLORS = [
       ["#ff6e90", "#ffe9ef"],
@@ -76,7 +69,6 @@
       ["#ffad54", "#fff2dd"],
   ];
   const MAX_MOVES = 30;
-
   let grid = [];
   let score = 0, movesLeft = MAX_MOVES;
   let gameActive = false;
@@ -85,20 +77,23 @@
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
 
+  // 始终正方形、高分屏、宽度自适应
   function resizeCanvas() {
-      let logical = GRID_SIZE * CELL_SIZE + PADDING * 2;
-      let availW = window.innerWidth - 24;
-      let availH = window.innerHeight - 320;
-      let dispSize = Math.min(availW, availH, 500, logical);
+      let parent = canvas.parentNode;
+      let parentW = parent.offsetWidth;
+      let size = Math.min(parentW, window.innerHeight - 220, 480); // 480px为最大棋盘
+      let logical = size; // 正方形
       let pixelRatio = window.devicePixelRatio || 1;
       canvas.width = logical * pixelRatio;
       canvas.height = logical * pixelRatio;
-      canvas.style.width = dispSize + 'px';
-      canvas.style.height = dispSize + 'px';
-      let scale = dispSize / logical;
-      ctx.setTransform(pixelRatio * scale, 0, 0, pixelRatio * scale, 0, 0);
+      canvas.style.width = logical + "px";
+      canvas.style.height = logical + "px";
+      CELL_SIZE = (logical - PADDING*2) / GRID_SIZE;
+      ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
       render();
   }
+
+  window.addEventListener('resize', function(){ setTimeout(resizeCanvas,80); });
 
   function randomColor() { return Math.floor(Math.random()*COLORS.length);}
   function fillGridNoMatch() {
@@ -294,9 +289,7 @@
 
   let touchStartCell = null;
   let touchMoved = false;
-
   canvas.addEventListener('click', handleInput);
-
   canvas.addEventListener('touchstart', function(e) {
       if (!gameActive || animating) return;
       let pos = getCanvasPosition(e);
@@ -306,7 +299,6 @@
       touchMoved = false;
       e.preventDefault();
   }, {passive:false});
-
   canvas.addEventListener('touchmove', function(e) {
       if (!touchStartCell || !gameActive || animating) return;
       let pos = getCanvasPosition(e);
@@ -319,7 +311,6 @@
       }
       e.preventDefault();
   }, {passive:false});
-
   canvas.addEventListener('touchend', function(e) {
       if (!touchMoved) {
           handleInput(e);
@@ -387,13 +378,12 @@
       }
   });
 
-  // 初始保证一定显示
+  // 页面加载时优先调整尺寸，兼容全部移动端
   window.onload = function() {
     resizeCanvas();
     initGame();
-    setTimeout(resizeCanvas, 300);  // 兼容iOS部分机型
+    setTimeout(resizeCanvas, 300);  // 防止延迟渲染 bug
   };
-  window.addEventListener('resize', resizeCanvas);
 
   </script>
 </body>
