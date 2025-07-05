@@ -5,7 +5,7 @@
   <title>三消积分游戏</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <style>
-    html, body { height: 100%; margin: 0; padding: 0; background: linear-gradient(120deg, #23243a 0%, #1c2037 100%);}
+    html,body { height: 100%; margin: 0; padding: 0; background: linear-gradient(120deg, #23243a 0%, #1c2037 100%);}
     body { font-family: 'Segoe UI', Arial, sans-serif; color: #fff; }
     h1 {text-align:center; letter-spacing:2px; margin:1.2em 0 0.5em; font-weight:800; text-shadow:0 4px 22px #5d7aff55;}
     .game-box { background:rgba(30,34,55,0.98); border-radius:24px; margin:0 auto; max-width:480px; box-shadow:0 8px 38px #0009; padding:18px 8px 16px 8px;}
@@ -76,7 +76,6 @@ let isPaused = false;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// ====================== Canvas Resize 适配 ======================
 function resizeCanvas() {
     let parent = canvas.parentNode;
     let parentW = parent.offsetWidth || window.innerWidth;
@@ -95,7 +94,6 @@ function resizeCanvas() {
 }
 window.addEventListener('resize', function(){ setTimeout(resizeCanvas,100); });
 
-// ============ 初始化/无消除填充 ============
 function randomColor() { return Math.floor(Math.random()*COLORS.length);}
 function fillGridNoMatch() {
     grid = [];
@@ -123,7 +121,6 @@ function initGame() {
     render();
 }
 
-// ====================== 渲染 ======================
 function render() {
     let s = CELL_SIZE, pad = PADDING;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -154,13 +151,14 @@ function render() {
             ctx.strokeStyle = "#fff2";
             ctx.lineWidth = 2;
             ctx.strokeRect(x, y, s-3, s-3);
+            // 高亮当前选中
             if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
                 ctx.save();
                 ctx.strokeStyle = "#28c7fa";
                 ctx.shadowColor = "#28c7fa";
                 ctx.shadowBlur = 16;
                 ctx.lineWidth = 7;
-                ctx.globalAlpha = 0.86;
+                ctx.globalAlpha = 0.93;
                 ctx.strokeRect(x+1, y+1, s-5, s-5);
                 ctx.restore();
             }
@@ -297,59 +295,69 @@ function dropAndFill(toClear, cb) {
     }, 140);
 }
 
-// ==================== 移动端专用操作 ====================
+// ==================== 触控与点击操作 ====================
 let touchStartCell = null;
 let touchMoved = false;
 
-canvas.addEventListener('click', handleInput);
+canvas.addEventListener('click', function(e){
+    if (!gameActive || animating || isPaused) return;
+    const pos = getCanvasPosition(e);
+    const cell = getCellFromPosition(pos.x, pos.y);
+    if (!cell) return;
+    if (!selectedCell) {
+        selectedCell = cell;
+        render();
+    } else if (cellsEqual(selectedCell, cell)) {
+        selectedCell = null;
+        render();
+    } else if (areAdjacent(selectedCell, cell)) {
+        trySwap(selectedCell, cell);
+        selectedCell = null;
+        render();
+    } else {
+        selectedCell = cell;
+        render();
+    }
+});
+
 canvas.addEventListener('touchstart', function(e) {
     if (!gameActive || animating || isPaused) return;
-    let pos = getCanvasPosition(e);
-    let cell = getCellFromPosition(pos.x, pos.y);
+    const pos = getCanvasPosition(e);
+    const cell = getCellFromPosition(pos.x, pos.y);
     if (!cell) return;
     touchStartCell = cell;
     touchMoved = false;
+    // 高亮起点
+    selectedCell = cell;
+    render();
     e.preventDefault();
 }, {passive:false});
+
 canvas.addEventListener('touchmove', function(e) {
-    if (!touchStartCell || !gameActive || animating || isPaused) return;
-    let pos = getCanvasPosition(e);
-    let cell = getCellFromPosition(pos.x, pos.y);
+    if (!gameActive || animating || isPaused || !touchStartCell) return;
+    const pos = getCanvasPosition(e);
+    const cell = getCellFromPosition(pos.x, pos.y);
     if (!cell) return;
-    if (areAdjacent(touchStartCell, cell)) {
+    if (areAdjacent(touchStartCell, cell) && !touchMoved) {
         trySwap(touchStartCell, cell);
         touchMoved = true;
+        selectedCell = null; // 交换后取消高亮
+        render();
         touchStartCell = null;
     }
     e.preventDefault();
 }, {passive:false});
+
 canvas.addEventListener('touchend', function(e) {
-    if (!touchMoved && !isPaused) {
-        handleInput(e);
+    // 没有滑动就是单纯点选，保留高亮
+    if (!touchMoved && !isPaused && touchStartCell) {
+        selectedCell = touchStartCell;
+        render();
     }
     touchStartCell = null;
     touchMoved = false;
     e.preventDefault();
 }, {passive:false});
-
-function handleInput(e) {
-    if (!gameActive || animating || isPaused) return;
-    let pos = getCanvasPosition(e);
-    let cell = getCellFromPosition(pos.x, pos.y);
-    if (!cell) return;
-    if (!selectedCell) {
-        selectedCell = cell;
-    } else if (cellsEqual(selectedCell, cell)) {
-        selectedCell = null;
-    } else if (areAdjacent(selectedCell, cell)) {
-        trySwap(selectedCell, cell);
-        selectedCell = null;
-    } else {
-        selectedCell = cell;
-    }
-    render();
-    if (e.touches) e.preventDefault();
-}
 
 // ====================== UI更新/提交 ======================
 function updateUI() {
