@@ -5,8 +5,8 @@
   <title>三消积分游戏</title>
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <style>
-    html,body { background: linear-gradient(120deg, #23243a 0%, #1c2037 100%);
-      color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
+    html, body { height: 100%; margin: 0; padding: 0; background: linear-gradient(120deg, #23243a 0%, #1c2037 100%);}
+    body { font-family: 'Segoe UI', Arial, sans-serif; color: #fff; }
     h1 {text-align:center; letter-spacing:2px; margin:1.2em 0 0.5em; font-weight:800; text-shadow:0 4px 22px #5d7aff55;}
     .game-box { background:rgba(30,34,55,0.98); border-radius:24px; margin:0 auto; max-width:480px; box-shadow:0 8px 38px #0009; padding:18px 8px 16px 8px;}
     #gameCanvas {
@@ -14,8 +14,7 @@
       display:block; margin:0 auto 18px auto; border-radius:22px; box-shadow:0 8px 32px #4349c033,0 1.5px 4px #0007;
       touch-action: none;   /* 禁止所有手势操作 */
       user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
-      width: 100%; height: auto; aspect-ratio: 1/1; /* 保证正方形 */
-      min-width: 240px; max-width: 98vw;
+      width: 98vw; height: 98vw; max-width: 480px; max-height: 480px; min-width: 220px; min-height: 220px;
     }
     #scorebar {
       font-size:1.14rem; letter-spacing:.03em; display:flex; justify-content:center; gap:1.6em; margin-bottom:10px;
@@ -54,7 +53,7 @@
       <p style="font-size:1.18rem;margin-top:6px;">你的分数: <span id="finalScore"></span></p>
       <button onclick="restartGame()">再玩一次</button>
   </div>
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
 const GRID_SIZE = 8;
 let CELL_SIZE = 56;
@@ -77,10 +76,11 @@ let isPaused = false;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// ====================== Canvas Resize 适配 ======================
 function resizeCanvas() {
     let parent = canvas.parentNode;
-    let parentW = parent.offsetWidth;
-    let size = Math.min(parentW, window.innerHeight - 220, 480);
+    let parentW = parent.offsetWidth || window.innerWidth;
+    let size = Math.min(parentW, window.innerHeight - 120, 480);
     let logical = size;
     let pixelRatio = window.devicePixelRatio || 1;
     canvas.width = logical * pixelRatio;
@@ -93,8 +93,9 @@ function resizeCanvas() {
       render();
     }
 }
-window.addEventListener('resize', function(){ setTimeout(resizeCanvas,80); });
+window.addEventListener('resize', function(){ setTimeout(resizeCanvas,100); });
 
+// ============ 初始化/无消除填充 ============
 function randomColor() { return Math.floor(Math.random()*COLORS.length);}
 function fillGridNoMatch() {
     grid = [];
@@ -122,6 +123,7 @@ function initGame() {
     render();
 }
 
+// ====================== 渲染 ======================
 function render() {
     let s = CELL_SIZE, pad = PADDING;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -167,6 +169,7 @@ function render() {
     }
 }
 
+// ============ 三消逻辑 ============
 function getCanvasPosition(e) {
     let rect = canvas.getBoundingClientRect();
     let x, y;
@@ -294,9 +297,10 @@ function dropAndFill(toClear, cb) {
     }, 140);
 }
 
-// 移动端专用操作
+// ==================== 移动端专用操作 ====================
 let touchStartCell = null;
 let touchMoved = false;
+
 canvas.addEventListener('click', handleInput);
 canvas.addEventListener('touchstart', function(e) {
     if (!gameActive || animating || isPaused) return;
@@ -347,6 +351,7 @@ function handleInput(e) {
     if (e.touches) e.preventDefault();
 }
 
+// ====================== UI更新/提交 ======================
 function updateUI() {
     document.getElementById('score').textContent = score;
     document.getElementById('moves').textContent = movesLeft;
@@ -363,7 +368,7 @@ function restartGame() {
     resizeCanvas();
 }
 
-let userId = '100001';
+let userId = '100001'; // 这里替换成真实user_id
 function submitScore() {
     $.post("/play", {
         user_id: userId,
@@ -376,10 +381,10 @@ function submitScore() {
     });
 }
 
-// “开始/暂停”按钮逻辑
+// =========== 开始/暂停按钮 ==========
 document.getElementById('controlButton').addEventListener('click', () => {
     if (!gameActive) {
-        initGame(); // 每次点击都新一局
+        initGame();
         gameActive = true;
         isPaused = false;
         document.getElementById('controlButton').textContent = "暂停";
@@ -390,6 +395,7 @@ document.getElementById('controlButton').addEventListener('click', () => {
     }
 });
 
+// ========== 页面初始化 ==========
 window.onload = function() {
   initGame();
   resizeCanvas();
