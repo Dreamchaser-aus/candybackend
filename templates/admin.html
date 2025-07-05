@@ -126,7 +126,7 @@ $(function() {
   </nav>
   <div class="container" style="max-width: 98vw;">
     <div class="card p-4 mb-4">
-      <!-- 搜索表单：日期区间 + 关键词 + 状态 -->
+      <!-- 搜索表单：日期区间 + 关键词 + 状态 + 每页条数 -->
       <form class="row g-2 align-items-center mb-3" method="get" action="/admin" autocomplete="off">
         <div class="col-12 col-md-4">
           <input type="text" id="date-range" class="form-control" placeholder="选择日期区间" readonly
@@ -134,7 +134,7 @@ $(function() {
           <input type="hidden" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}">
           <input type="hidden" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
         </div>
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
           <input type="text" class="form-control" name="q" placeholder="用户名 / 手机号 / 邀请人用户名" value="{{ request.args.q or '' }}">
         </div>
         <div class="col-6 col-md-2">
@@ -145,6 +145,13 @@ $(function() {
           </select>
         </div>
         <div class="col-6 col-md-2">
+          <select class="form-select" name="page_size" onchange="this.form.submit()">
+            {% for sz in [10,20,50,100] %}
+              <option value="{{ sz }}" {% if page_size == sz %}selected{% endif %}>每页{{ sz }}条</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-12 col-md-1">
           <button class="btn btn-primary w-100" type="submit">搜索</button>
         </div>
       </form>
@@ -201,6 +208,32 @@ $(function() {
           </tbody>
         </table>
       </div>
+      <!-- 分页控件 -->
+      <nav aria-label="分页" class="mt-3">
+        <ul class="pagination justify-content-center">
+          <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page-1 }}&page_size={{ page_size }}{{ qstr }}" aria-label="上一页">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          {% for p in range(1, total_pages+1) %}
+            {% if total_pages <= 7 or p <= 2 or p > total_pages-2 or (p >= page-1 and p <= page+1) %}
+              <li class="page-item {% if page == p %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}&page_size={{ page_size }}{{ qstr }}">{{ p }}</a>
+              </li>
+            {% elif p == 3 and page > 4 %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% elif p == total_pages-2 and page < total_pages-3 %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+          {% endfor %}
+          <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="?page={{ page+1 }}&page_size={{ page_size }}{{ qstr }}" aria-label="下一页">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
     </div>
   </div>
 </body>
