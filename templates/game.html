@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>三消积分游戏</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <style>
     html,body { background: linear-gradient(120deg, #23243a 0%, #1c2037 100%);
       color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
@@ -12,9 +12,11 @@
     canvas {
       background: linear-gradient(160deg,#252845 80%,#1d1e30 100%);
       display:block; margin:0 auto 16px auto; border-radius:22px; box-shadow:0 8px 32px #4349c033,0 1.5px 4px #0007;
-      touch-action: none;       /* 禁止在canvas上手势拖动/缩放/滚动 */
+      touch-action: none;   /* 禁止所有手势操作 */
       -ms-touch-action: none;
       user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     #scorebar {
       font-size:1.14rem; letter-spacing:.03em; display:flex; justify-content:center; gap:1.9em; margin-bottom:14px;
@@ -56,6 +58,11 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
+  // 防止微信/安卓浏览器双指缩放和下拉页面
+  document.addEventListener('touchmove', function(e){
+    if (e.target === canvas) e.preventDefault();
+  }, {passive:false});
+
   // 三消游戏逻辑
   const GRID_SIZE = 8;
   const CELL_SIZE = 56;
@@ -75,9 +82,9 @@
   let gameActive = false;
   let selectedCell = null, animating = false;
 
-  // 高清自适应
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
+
   function resizeCanvas() {
       let logical = GRID_SIZE * CELL_SIZE + PADDING * 2;
       let availW = window.innerWidth - 24;
@@ -123,7 +130,6 @@
   function render() {
       let s = CELL_SIZE, pad = PADDING;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // 背景
       ctx.save();
       ctx.shadowColor = "#2231c6cc";
       ctx.shadowBlur = 32;
@@ -166,7 +172,6 @@
       }
   }
 
-  // 修正点击和滑动在所有设备上的坐标换算
   function getCanvasPosition(e) {
       let rect = canvas.getBoundingClientRect();
       let x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
@@ -357,36 +362,4 @@
       submitScore();
   }
   function restartGame() {
-      document.getElementById('gameOverModal').style.display = 'none';
-      initGame();
-  }
-
-  // 你的后端用户ID
-  let userId = '100001';
-  function submitScore() {
-      $.post("/play", {
-          user_id: userId,
-          score: score,
-          game_name: "三消游戏"
-      }, function(data) {
-          // 上传成功逻辑
-      }).fail(function(err) {
-          alert("提交失败: " + (err.responseJSON?.error || "未知错误"));
-      });
-  }
-
-  document.getElementById('controlButton').addEventListener('click', () => {
-      if (!gameActive) {
-          gameActive = true;
-          document.getElementById('controlButton').textContent = "暂停";
-          render();
-          return;
-      }
-  });
-
-  initGame();
-  setTimeout(resizeCanvas, 30);
-
-  </script>
-</body>
-</html>
+      document.getElementById
