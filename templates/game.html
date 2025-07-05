@@ -1,255 +1,339 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <title>积分测试游戏 - 高清体验版</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <style>
-        html, body { margin:0; padding:0; background: #222; color: #fff; font-family: "Segoe UI", Arial, sans-serif;}
-        .center { text-align:center; }
-        canvas { background: #333; display: block; margin: 18px auto 12px auto; border-radius: 12px; box-shadow: 0 2px 20px #0006; }
-        #scorebar {font-size:1.1rem; letter-spacing:.02em; display:flex; justify-content:center; gap:1.6em;}
-        #gameOverModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
-                         color: #fff; display: none; justify-content: center; align-items: center; flex-direction: column; z-index:99; }
-        #gameOverModal button { padding: 10px 32px; margin-top: 28px; background: #ff7900; color: white;
-                                border: none; border-radius: 8px; font-size:1.1rem; cursor: pointer; box-shadow: 0 2px 6px #0004;}
-        #gameOverModal button:hover { background: #ff9800; }
-        #controlButton { margin:10px auto; padding:10px 32px; font-size:1.1rem; background:#18bfff; color:#fff; border:0; border-radius:8px; box-shadow:0 1px 8px #18bfff2b; cursor:pointer; transition:.15s;}
-        #controlButton:hover { background: #0e7dc4;}
-        @media (max-width: 600px) {
-            canvas { width: 99vw !important; height: 99vw !important; max-width: 99vw !important; max-height: 99vw !important;}
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>三消积分游戏</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    html,body { background: #181a21; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
+    h1 {text-align:center; letter-spacing:2px; margin:1em 0 0.5em;}
+    .center { text-align:center; }
+    canvas { background: #26282f; display: block; margin: 0 auto 12px auto; border-radius: 14px; box-shadow: 0 2px 20px #0008; }
+    #scorebar {font-size:1.1rem; letter-spacing:.02em; display:flex; justify-content:center; gap:1.6em; margin-bottom:10px;}
+    #gameOverModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.87);
+      color: #fff; display: none; justify-content: center; align-items: center; flex-direction: column; z-index:99; }
+    #gameOverModal button { padding: 12px 34px; margin-top: 26px; background: #18bfff; color: white;
+      border: none; border-radius: 8px; font-size:1.1rem; cursor: pointer; box-shadow: 0 2px 6px #0004;}
+    #gameOverModal button:hover { background: #0098e0;}
+    #controlButton { margin:10px auto; padding:10px 32px; font-size:1.1rem; background:#ffbd2f; color:#2a2a2a; border:0; border-radius:8px; box-shadow:0 1px 8px #ffbb2f2b; cursor:pointer; transition:.15s;}
+    #controlButton:hover { background: #ffdf2e;}
+    @media (max-width: 650px) {
+      canvas { width: 98vw !important; height: 98vw !important; max-width: 98vw !important; max-height: 98vw !important;}
+    }
+  </style>
 </head>
 <body>
-    <div class="center"><h1 style="letter-spacing:2px;">高清积分消除测试</h1></div>
-    <canvas id="gameCanvas"></canvas>
-    <div id="scorebar">
-        <span>分数: <b id="score">0</b></span>
-        <span>时间: <b id="timer">60</b>秒</span>
-        <span>步数: <b id="moves">30</b></span>
-    </div>
-    <div class="center">
-        <button id="controlButton">开始游戏</button>
-    </div>
-    <div id="gameOverModal">
-        <h2 style="font-size:2rem;">🎉 游戏结束!</h2>
-        <p style="font-size:1.2rem;">你的分数: <span id="finalScore"></span></p>
-        <button onclick="restartGame()">再玩一次</button>
-    </div>
+  <h1>三消积分游戏</h1>
+  <canvas id="gameCanvas"></canvas>
+  <div id="scorebar">
+      <span>分数: <b id="score">0</b></span>
+      <span>步数: <b id="moves">30</b></span>
+  </div>
+  <div class="center">
+      <button id="controlButton">开始游戏</button>
+  </div>
+  <div id="gameOverModal">
+      <h2 style="font-size:2rem;">🎉 游戏结束!</h2>
+      <p style="font-size:1.2rem;">你的分数: <span id="finalScore"></span></p>
+      <button onclick="restartGame()">再玩一次</button>
+  </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-    // ========== 高清画质 Canvas 自动适配 ==========
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+  // ================== 三消游戏逻辑核心 ==================
+  const GRID_SIZE = 8;
+  const CELL_SIZE = 56;
+  const PADDING = 10;
+  const COLORS = [
+      "#ff5757", "#ffe457", "#62d9ee", "#7df27d", "#b785f2", "#ff9b7b"
+  ];
+  const MAX_MOVES = 30;
 
-    const GRID_SIZE = 8;
-    const CELL_SIZE = 60; // 逻辑格子大小
-    const PADDING = 8;
-    const COLORS = [
-        "#ff5757", "#ffe457", "#62d9ee", "#7df27d", "#c17cff",
-        "#fe9b7b", "#b5ead7", "#f38181"
-    ];
-    const GAME_TIME = 60, MAX_MOVES = 30;
+  let grid = [];
+  let score = 0, movesLeft = MAX_MOVES;
+  let gameActive = false;
+  let selectedCell = null, animating = false;
 
-    let grid = [];
-    let score = 0, timeLeft = GAME_TIME, movesLeft = MAX_MOVES;
-    let gameActive = false, gamePaused = true;
-    let timerInterval = null, selectedCell = null;
+  // 高清 Canvas 适配
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  function resizeCanvas() {
+      let logical = GRID_SIZE * CELL_SIZE + PADDING*2;
+      let pixelRatio = window.devicePixelRatio || 1;
+      let dispWidth = Math.min(window.innerWidth, window.innerHeight, 520) - 12;
+      let scale = dispWidth / logical;
+      canvas.width = logical * pixelRatio;
+      canvas.height = logical * pixelRatio;
+      canvas.style.width = logical * scale + 'px';
+      canvas.style.height = logical * scale + 'px';
+      ctx.setTransform(pixelRatio * scale, 0, 0, pixelRatio * scale, 0, 0);
+      render();
+  }
+  window.addEventListener('resize', resizeCanvas);
 
-    // 支持高清显示/自适应屏幕
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    function resizeCanvas() {
-        let logical = GRID_SIZE * CELL_SIZE + PADDING*2;
-        // 适配窗口
-        let pixelRatio = window.devicePixelRatio || 1;
-        let dispWidth = Math.min(window.innerWidth, window.innerHeight, 540) - 10;
-        let scale = dispWidth / logical;
-        canvas.width = logical * pixelRatio;
-        canvas.height = logical * pixelRatio;
-        canvas.style.width = logical * scale + 'px';
-        canvas.style.height = logical * scale + 'px';
-        ctx.setTransform(pixelRatio * scale, 0, 0, pixelRatio * scale, 0, 0);
-        render();
-    }
-    window.addEventListener('resize', resizeCanvas);
+  // 初始化新盘面
+  function randomColor() { return Math.floor(Math.random()*COLORS.length);}
+  function fillGridNoMatch() {
+      for (let row = 0; row < GRID_SIZE; row++) {
+          grid[row] = [];
+          for (let col = 0; col < GRID_SIZE; col++) {
+              do {
+                  grid[row][col] = randomColor();
+              } while (isMatchAt(row, col));
+          }
+      }
+  }
+  function isMatchAt(row, col) {
+      const color = grid[row][col];
+      if (col>=2 && grid[row][col-1]===color && grid[row][col-2]===color) return true;
+      if (row>=2 && grid[row-1][col]===color && grid[row-2][col]===color) return true;
+      return false;
+  }
+  function initGame() {
+      fillGridNoMatch();
+      score = 0; movesLeft = MAX_MOVES;
+      gameActive = false; selectedCell = null; animating = false;
+      updateUI();
+      document.getElementById('controlButton').textContent = "开始游戏";
+      render();
+  }
 
-    // ==== 逻辑 ====
-    function initGame() {
-        grid = [];
-        for (let row = 0; row < GRID_SIZE; row++) {
-            grid[row] = [];
-            for (let col = 0; col < GRID_SIZE; col++) {
-                grid[row][col] = Math.floor(Math.random() * COLORS.length);
-            }
-        }
-        score = 0; timeLeft = GAME_TIME; movesLeft = MAX_MOVES;
-        gameActive = false; gamePaused = true;
-        clearInterval(timerInterval);
-        updateUI();
-        document.getElementById('controlButton').textContent = "开始游戏";
-        render();
-    }
+  function render() {
+      let s = CELL_SIZE, pad = PADDING;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // 绘制棋盘
+      for (let row = 0; row < GRID_SIZE; row++) {
+          for (let col = 0; col < GRID_SIZE; col++) {
+              let x = pad + col * s, y = pad + row * s;
+              ctx.save();
+              ctx.fillStyle = COLORS[grid[row][col]];
+              ctx.globalAlpha = 0.92;
+              ctx.fillRect(x, y, s-2, s-2);
 
-    function render() {
-        let s = CELL_SIZE, pad = PADDING;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        // 画棋盘
-        for (let row = 0; row < GRID_SIZE; row++) {
-            for (let col = 0; col < GRID_SIZE; col++) {
-                let x = pad + col * s, y = pad + row * s;
-                ctx.save();
-                // 方块主色
-                ctx.fillStyle = COLORS[grid[row][col]];
-                ctx.globalAlpha = 0.88;
-                ctx.fillRect(x, y, s-2, s-2);
+              // 高光
+              ctx.globalAlpha = 1;
+              let grad = ctx.createLinearGradient(x, y, x+s, y+s);
+              grad.addColorStop(0, "#fff5");
+              grad.addColorStop(1, COLORS[grid[row][col]]);
+              ctx.fillStyle = grad;
+              ctx.fillRect(x+3, y+3, s-8, s-14);
 
-                // 光泽效果
-                ctx.globalAlpha = 1;
-                let grad = ctx.createLinearGradient(x, y, x+s, y+s);
-                grad.addColorStop(0, "#fff4");
-                grad.addColorStop(1, COLORS[grid[row][col]]);
-                ctx.fillStyle = grad;
-                ctx.fillRect(x+3, y+3, s-8, s-14);
+              // 边框
+              ctx.strokeStyle = "#222b";
+              ctx.lineWidth = 2;
+              ctx.strokeRect(x, y, s-2, s-2);
 
-                // 边框
-                ctx.strokeStyle = "#222b";
-                ctx.lineWidth = 2;
-                ctx.strokeRect(x, y, s-2, s-2);
+              // 选中高亮
+              if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
+                  ctx.strokeStyle = "#ffe153";
+                  ctx.lineWidth = 5;
+                  ctx.shadowColor = "#ffe153";
+                  ctx.shadowBlur = 8;
+                  ctx.strokeRect(x+2, y+2, s-6, s-6);
+              }
+              ctx.restore();
+          }
+      }
+  }
 
-                // 选中高亮
-                if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
-                    ctx.strokeStyle = "#ffe153";
-                    ctx.lineWidth = 5;
-                    ctx.shadowColor = "#ffe153";
-                    ctx.shadowBlur = 8;
-                    ctx.strokeRect(x+2, y+2, s-6, s-6);
-                }
-                ctx.restore();
-            }
-        }
-    }
+  // 输入与交换
+  function getCanvasPosition(e) {
+      let rect = canvas.getBoundingClientRect();
+      let pixelRatio = window.devicePixelRatio || 1;
+      let x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left);
+      let y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top);
+      let dispWidth = Math.min(window.innerWidth, window.innerHeight, 520) - 12;
+      let logical = GRID_SIZE * CELL_SIZE + PADDING*2;
+      let scale = logical / dispWidth;
+      return { x: x*scale, y: y*scale };
+  }
+  function getCellFromPosition(x, y) {
+      const col = Math.floor((x-PADDING) / CELL_SIZE);
+      const row = Math.floor((y-PADDING) / CELL_SIZE);
+      if (row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE) {
+          return { row, col };
+      }
+      return null;
+  }
+  function cellsEqual(cell1, cell2) {
+      return cell1 && cell2 && cell1.row === cell2.row && cell1.col === cell2.col;
+  }
+  function areAdjacent(cell1, cell2) {
+      const rowDiff = Math.abs(cell1.row - cell2.row);
+      const colDiff = Math.abs(cell1.col - cell2.col);
+      return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+  }
 
-    function getCanvasPosition(e) {
-        let rect = canvas.getBoundingClientRect();
-        let pixelRatio = window.devicePixelRatio || 1;
-        let x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left);
-        let y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top);
-        // 兼容缩放
-        let dispWidth = Math.min(window.innerWidth, window.innerHeight, 540) - 10;
-        let logical = GRID_SIZE * CELL_SIZE + PADDING*2;
-        let scale = logical / dispWidth;
-        return { x: x*scale, y: y*scale };
-    }
-    function getCellFromPosition(x, y) {
-        const col = Math.floor((x-PADDING) / CELL_SIZE);
-        const row = Math.floor((y-PADDING) / CELL_SIZE);
-        if (row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE) {
-            return { row, col };
-        }
-        return null;
-    }
-    function cellsEqual(cell1, cell2) {
-        return cell1 && cell2 && cell1.row === cell2.row && cell1.col === cell2.col;
-    }
-    function areAdjacent(cell1, cell2) {
-        const rowDiff = Math.abs(cell1.row - cell2.row);
-        const colDiff = Math.abs(cell1.col - cell2.col);
-        return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
-    }
-    function swapCells(cell1, cell2) {
-        const temp = grid[cell1.row][cell1.col];
-        grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
-        grid[cell2.row][cell2.col] = temp;
-        score += 10;
-        movesLeft--;
-        updateUI();
-        if (movesLeft <= 0) endGame();
-        render();
-    }
-    // 支持鼠标和触摸
-    canvas.addEventListener('click', handleInput);
-    canvas.addEventListener('touchstart', handleInput);
-    function handleInput(e) {
-        if (!gameActive || gamePaused) return;
-        let pos = getCanvasPosition(e);
-        let cell = getCellFromPosition(pos.x, pos.y);
-        if (!selectedCell) {
-            selectedCell = cell;
-        } else if (cellsEqual(selectedCell, cell)) {
-            selectedCell = null;
-        } else if (areAdjacent(selectedCell, cell)) {
-            swapCells(selectedCell, cell);
-            selectedCell = null;
-        } else {
-            selectedCell = cell;
-        }
-        render();
-        if (e.touches) e.preventDefault();
-    }
+  function trySwap(cell1, cell2) {
+      if (!gameActive || animating) return;
+      // 交换
+      swap(cell1, cell2);
+      let matches = findMatches();
+      if (matches.length === 0) {
+          // 没有消除，交换回去
+          setTimeout(() => { swap(cell1, cell2); selectedCell = null; render(); }, 180);
+      } else {
+          // 有消除，扣步数
+          movesLeft--;
+          processMatches(matches, function() {
+              selectedCell = null;
+              updateUI();
+              if (movesLeft <= 0) endGame();
+          });
+      }
+      render();
+  }
 
-    function startTimer() {
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            if (!gameActive || gamePaused) return;
-            timeLeft--;
-            updateUI();
-            if (timeLeft <= 0 || movesLeft <= 0) {
-                clearInterval(timerInterval);
-                endGame();
-            }
-        }, 1000);
-    }
-    function updateUI() {
-        document.getElementById('score').textContent = score;
-        document.getElementById('timer').textContent = timeLeft;
-        document.getElementById('moves').textContent = movesLeft;
-    }
-    function endGame() {
-        gameActive = false;
-        document.getElementById('finalScore').textContent = score;
-        document.getElementById('gameOverModal').style.display = 'flex';
-        submitScore();
-    }
-    function restartGame() {
-        document.getElementById('gameOverModal').style.display = 'none';
-        initGame();
-    }
-    // 你可以将 userId 换成当前登录用户的实际ID
-    let userId = '100001';
-    function submitScore() {
-        $.post("/play", {
-            user_id: userId,
-            score: score
-        }, function(data) {
-            // 成功可加动画/排行等
-        }).fail(function(err) {
-            alert("提交失败: " + (err.responseJSON?.error || "未知错误"));
-        });
-    }
-    document.getElementById('controlButton').addEventListener('click', () => {
-        if (!gameActive) {
-            gameActive = true;
-            gamePaused = false;
-            document.getElementById('controlButton').textContent = "暂停";
-            startTimer();
-            return;
-        }
-        if (gamePaused) {
-            gamePaused = false;
-            document.getElementById('controlButton').textContent = "暂停";
-            startTimer();
-        } else {
-            gamePaused = true;
-            document.getElementById('controlButton').textContent = "继续";
-            clearInterval(timerInterval);
-        }
-    });
+  function swap(cell1, cell2) {
+      let tmp = grid[cell1.row][cell1.col];
+      grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
+      grid[cell2.row][cell2.col] = tmp;
+  }
 
-    // 初始化
-    initGame();
-    setTimeout(resizeCanvas, 10);
+  // 查找所有三连
+  function findMatches() {
+      let matches = [];
+      // 行
+      for (let row = 0; row < GRID_SIZE; row++) {
+          let cnt = 1, prev = grid[row][0];
+          for (let col = 1; col < GRID_SIZE; col++) {
+              if (grid[row][col] === prev) cnt++;
+              else {
+                  if (cnt >= 3) matches.push({ type:'row', row, col:col-cnt, len:cnt });
+                  cnt = 1; prev = grid[row][col];
+              }
+          }
+          if (cnt >= 3) matches.push({ type:'row', row, col:GRID_SIZE-cnt, len:cnt });
+      }
+      // 列
+      for (let col = 0; col < GRID_SIZE; col++) {
+          let cnt = 1, prev = grid[0][col];
+          for (let row = 1; row < GRID_SIZE; row++) {
+              if (grid[row][col] === prev) cnt++;
+              else {
+                  if (cnt >= 3) matches.push({ type:'col', col, row:row-cnt, len:cnt });
+                  cnt = 1; prev = grid[row][col];
+              }
+          }
+          if (cnt >= 3) matches.push({ type:'col', col, row:GRID_SIZE-cnt, len:cnt });
+      }
+      return matches;
+  }
 
-    </script>
+  // 消除并下落
+  function processMatches(matches, cb) {
+      animating = true;
+      // 标记消除
+      let toClear = Array.from({length:GRID_SIZE},()=>Array(GRID_SIZE).fill(false));
+      for (let m of matches) {
+          if (m.type==='row') for(let c=0;c<m.len;c++) toClear[m.row][m.col+c]=true;
+          else for(let r=0;r<m.len;r++) toClear[m.row+r][m.col]=true;
+      }
+      // 加分
+      let cleared = 0;
+      for (let r = 0; r < GRID_SIZE; r++) for (let c = 0; c < GRID_SIZE; c++) if (toClear[r][c]) cleared++;
+      score += cleared * 20;
+      updateUI();
+
+      // 闪烁动画
+      let flashCt=0;
+      let flash = setInterval(()=>{
+          for (let r=0;r<GRID_SIZE;r++) for(let c=0;c<GRID_SIZE;c++)
+              if(toClear[r][c]) grid[r][c] = null;
+          render();
+          flashCt++;
+          if (flashCt>1) {
+              clearInterval(flash);
+              dropAndFill(toClear, cb);
+          }
+      }, 100);
+  }
+  function dropAndFill(toClear, cb) {
+      // 下落
+      for (let c = 0; c < GRID_SIZE; c++) {
+          let pointer = GRID_SIZE-1;
+          for (let r = GRID_SIZE-1; r >=0; r--) {
+              if (!toClear[r][c]) {
+                  grid[pointer][c] = grid[r][c];
+                  pointer--;
+              }
+          }
+          for (let r=pointer;r>=0;r--) grid[r][c]=randomColor();
+      }
+      render();
+      // 检查连锁
+      setTimeout(()=>{
+          let m = findMatches();
+          if(m.length>0) processMatches(m, cb);
+          else { animating=false; cb&&cb(); }
+      }, 140);
+  }
+
+  // 交互
+  canvas.addEventListener('click', handleInput);
+  canvas.addEventListener('touchstart', handleInput);
+  function handleInput(e) {
+      if (!gameActive || animating) return;
+      let pos = getCanvasPosition(e);
+      let cell = getCellFromPosition(pos.x, pos.y);
+      if (!cell) return;
+      if (!selectedCell) {
+          selectedCell = cell;
+      } else if (cellsEqual(selectedCell, cell)) {
+          selectedCell = null;
+      } else if (areAdjacent(selectedCell, cell)) {
+          trySwap(selectedCell, cell);
+          selectedCell = null;
+      } else {
+          selectedCell = cell;
+      }
+      render();
+      if (e.touches) e.preventDefault();
+  }
+
+  function updateUI() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('moves').textContent = movesLeft;
+  }
+  function endGame() {
+      gameActive = false;
+      document.getElementById('finalScore').textContent = score;
+      document.getElementById('gameOverModal').style.display = 'flex';
+      submitScore();
+  }
+  function restartGame() {
+      document.getElementById('gameOverModal').style.display = 'none';
+      initGame();
+  }
+
+  // 你的后端用户ID
+  let userId = '100001';
+  function submitScore() {
+      $.post("/play", {
+          user_id: userId,
+          score: score,
+          game_name: "三消游戏"
+      }, function(data) {
+          // 上传成功逻辑
+      }).fail(function(err) {
+          alert("提交失败: " + (err.responseJSON?.error || "未知错误"));
+      });
+  }
+
+  document.getElementById('controlButton').addEventListener('click', () => {
+      if (!gameActive) {
+          gameActive = true;
+          document.getElementById('controlButton').textContent = "暂停";
+          render();
+          return;
+      }
+      // 暂停可实现，但三消步数型一般无暂停
+  });
+
+  // 初始化
+  initGame();
+  setTimeout(resizeCanvas, 20);
+
+  </script>
 </body>
 </html>
