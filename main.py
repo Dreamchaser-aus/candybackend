@@ -146,11 +146,23 @@ def admin():
 @app.route("/user/logs")
 def user_logs():
     user_id = request.args.get("user_id")
+    page = int(request.args.get("page", 1))
+    page_size = 20
     with get_conn() as conn:
         with conn.cursor() as c:
-            c.execute("SELECT * FROM game_logs WHERE user_id = %s ORDER BY timestamp DESC", (user_id,))
+            # 统计总条数
+            c.execute("SELECT COUNT(*) FROM game_logs WHERE user_id = %s", (user_id,))
+            total = c.fetchone()[0]
+            total_pages = (total + page_size - 1) // page_size if total else 1
+            # 查询本页
+            c.execute("SELECT * FROM game_logs WHERE user_id = %s ORDER BY timestamp DESC LIMIT %s OFFSET %s",
+                      (user_id, page_size, (page-1)*page_size))
             logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
-    return render_template("user_logs.html", logs=logs, user_id=user_id)
+    return render_template("user_logs.html",
+                           logs=logs,
+                           user_id=user_id,
+                           page=page,
+                           total_pages=total_pages)
 
 @app.route("/invitees")
 def invitees():
