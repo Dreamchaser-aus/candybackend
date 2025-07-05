@@ -9,8 +9,13 @@
       color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
     h1 {text-align:center; letter-spacing:2px; margin:1.2em 0 0.5em; font-weight:800; text-shadow:0 4px 22px #5d7aff55;}
     .game-box { background:rgba(30,34,55,0.98); border-radius:24px; margin:0 auto; max-width:650px; box-shadow:0 8px 38px #0009; padding:22px 18px 18px 18px;}
-    canvas { background: linear-gradient(160deg,#252845 80%,#1d1e30 100%);
-      display:block; margin:0 auto 16px auto; border-radius:22px; box-shadow:0 8px 32px #4349c033,0 1.5px 4px #0007;}
+    canvas {
+      background: linear-gradient(160deg,#252845 80%,#1d1e30 100%);
+      display:block; margin:0 auto 16px auto; border-radius:22px; box-shadow:0 8px 32px #4349c033,0 1.5px 4px #0007;
+      touch-action: none;       /* 禁止在canvas上手势拖动/缩放/滚动 */
+      -ms-touch-action: none;
+      user-select: none;
+    }
     #scorebar {
       font-size:1.14rem; letter-spacing:.03em; display:flex; justify-content:center; gap:1.9em; margin-bottom:14px;
       background:rgba(255,255,255,0.11); border-radius:16px; box-shadow:0 0.5px 4px #2234d044; padding:7px 0 3px 0;
@@ -283,7 +288,7 @@
       }, 140);
   }
 
-  // ======== 支持点选+滑动换位 =========
+  // 支持点选+滑动换位+禁止网页滚动
   let touchStartCell = null;
   let touchMoved = false;
   canvas.addEventListener('click', handleInput);
@@ -295,6 +300,7 @@
       if (!cell) return;
       touchStartCell = cell;
       touchMoved = false;
+      e.preventDefault();
   }, {passive:false});
 
   canvas.addEventListener('touchmove', function(e) {
@@ -318,6 +324,7 @@
       }
       touchStartCell = null;
       touchMoved = false;
+      e.preventDefault();
   }, {passive:false});
 
   function handleInput(e) {
