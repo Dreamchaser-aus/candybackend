@@ -199,7 +199,7 @@ def rank_today():
                 LEFT JOIN game_logs g ON u.user_id = g.user_id AND g.timestamp::date = %s
                 GROUP BY u.user_id, u.username, u.phone, u.created_at, u.last_game_time
                 ORDER BY day_points DESC
-                LIMIT 100
+                LIMIT 20
             """, (date_str,))
             users = [
                 {
