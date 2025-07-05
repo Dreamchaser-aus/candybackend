@@ -5,36 +5,47 @@
   <title>三消积分游戏</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <style>
-    html,body { background: #181a21; color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
-    h1 {text-align:center; letter-spacing:2px; margin:1em 0 0.5em;}
-    .center { text-align:center; }
-    canvas { background: #26282f; display: block; margin: 0 auto 12px auto; border-radius: 14px; box-shadow: 0 2px 20px #0008; }
-    #scorebar {font-size:1.1rem; letter-spacing:.02em; display:flex; justify-content:center; gap:1.6em; margin-bottom:10px;}
-    #gameOverModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.87);
+    html,body { background: linear-gradient(120deg, #23243a 0%, #1c2037 100%);
+      color: #fff; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0;}
+    h1 {text-align:center; letter-spacing:2px; margin:1.2em 0 0.5em; font-weight:800; text-shadow:0 4px 22px #5d7aff55;}
+    .game-box { background:rgba(30,34,55,0.98); border-radius:24px; margin:0 auto; max-width:650px; box-shadow:0 8px 38px #0009; padding:22px 18px 18px 18px;}
+    canvas { background: linear-gradient(160deg,#252845 80%,#1d1e30 100%);
+      display:block; margin:0 auto 16px auto; border-radius:22px; box-shadow:0 8px 32px #4349c033,0 1.5px 4px #0007;}
+    #scorebar {
+      font-size:1.14rem; letter-spacing:.03em; display:flex; justify-content:center; gap:1.9em; margin-bottom:14px;
+      background:rgba(255,255,255,0.11); border-radius:16px; box-shadow:0 0.5px 4px #2234d044; padding:7px 0 3px 0;
+      font-weight:600;
+    }
+    #gameOverModal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(20,18,34,0.98);
       color: #fff; display: none; justify-content: center; align-items: center; flex-direction: column; z-index:99; }
-    #gameOverModal button { padding: 12px 34px; margin-top: 26px; background: #18bfff; color: white;
-      border: none; border-radius: 8px; font-size:1.1rem; cursor: pointer; box-shadow: 0 2px 6px #0004;}
-    #gameOverModal button:hover { background: #0098e0;}
-    #controlButton { margin:10px auto; padding:10px 32px; font-size:1.1rem; background:#ffbd2f; color:#2a2a2a; border:0; border-radius:8px; box-shadow:0 1px 8px #ffbb2f2b; cursor:pointer; transition:.15s;}
-    #controlButton:hover { background: #ffdf2e;}
-    @media (max-width: 650px) {
-      canvas { width: 98vw !important; height: 98vw !important; max-width: 98vw !important; max-height: 98vw !important;}
+    #gameOverModal button { padding: 13px 36px; margin-top: 28px; background: linear-gradient(90deg,#28c7fa,#5468ff 95%);
+      color: white; border: none; border-radius: 10px; font-size:1.13rem; cursor: pointer; font-weight:700; box-shadow:0 2px 10px #28c7fa22;}
+    #gameOverModal button:hover { background:linear-gradient(90deg,#5468ff,#28c7fa);}
+    #controlButton { margin:10px auto 0; padding:12px 44px; font-size:1.13rem;
+      background:linear-gradient(90deg,#ffd048,#ff7e54); color:#222; border:0; border-radius:12px;
+      font-weight:700; box-shadow:0 1px 9px #ffd0483c; cursor:pointer; transition:.16s;}
+    #controlButton:hover { background:linear-gradient(90deg,#ffe95a,#ffad54);}
+    @media (max-width: 800px) {
+      .game-box {max-width:99vw;}
+      canvas { width:98vw !important; height:98vw !important; max-width:98vw !important; max-height:98vw !important;}
     }
   </style>
 </head>
 <body>
   <h1>三消积分游戏</h1>
-  <canvas id="gameCanvas"></canvas>
-  <div id="scorebar">
-      <span>分数: <b id="score">0</b></span>
-      <span>步数: <b id="moves">30</b></span>
-  </div>
-  <div class="center">
-      <button id="controlButton">开始游戏</button>
+  <div class="game-box">
+    <canvas id="gameCanvas"></canvas>
+    <div id="scorebar">
+        <span>分数: <b id="score">0</b></span>
+        <span>步数: <b id="moves">30</b></span>
+    </div>
+    <div class="center">
+        <button id="controlButton">开始游戏</button>
+    </div>
   </div>
   <div id="gameOverModal">
-      <h2 style="font-size:2rem;">🎉 游戏结束!</h2>
-      <p style="font-size:1.2rem;">你的分数: <span id="finalScore"></span></p>
+      <h2 style="font-size:2rem;letter-spacing:3px;">🎉 游戏结束!</h2>
+      <p style="font-size:1.18rem;margin-top:6px;">你的分数: <span id="finalScore"></span></p>
       <button onclick="restartGame()">再玩一次</button>
   </div>
 
@@ -43,9 +54,14 @@
   // ========== 三消游戏逻辑 ==========
   const GRID_SIZE = 8;
   const CELL_SIZE = 56;
-  const PADDING = 10;
+  const PADDING = 14;
   const COLORS = [
-      "#ff5757", "#ffe457", "#62d9ee", "#7df27d", "#b785f2", "#ff9b7b"
+      ["#ff6e90", "#ffe9ef"], // 红-渐变
+      ["#ffe457", "#fff7c5"], // 黄
+      ["#62d9ee", "#d8f5ff"], // 蓝
+      ["#7df27d", "#e2ffe7"], // 绿
+      ["#b785f2", "#f3eaff"], // 紫
+      ["#ffad54", "#fff2dd"], // 橙
   ];
   const MAX_MOVES = 30;
 
@@ -54,29 +70,21 @@
   let gameActive = false;
   let selectedCell = null, animating = false;
 
-  // 高清+适配：始终完整显示棋盘
+  // 自适应棋盘
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   function resizeCanvas() {
       let logical = GRID_SIZE * CELL_SIZE + PADDING * 2;
-      // 预留顶部和底部区域，220像素用于标题/按钮/分数
-      let availW = window.innerWidth - 20;
-      let availH = window.innerHeight - 220;
-      let dispSize = Math.min(availW, availH, 520, logical); // 最多不超过520像素
+      let availW = window.innerWidth - 24;
+      let availH = window.innerHeight - 320; // 预留标题按钮
+      let dispSize = Math.min(availW, availH, 500, logical);
       let pixelRatio = window.devicePixelRatio || 1;
-
-      // 物理像素
       canvas.width = logical * pixelRatio;
       canvas.height = logical * pixelRatio;
-
-      // 显示尺寸
       canvas.style.width = dispSize + 'px';
       canvas.style.height = dispSize + 'px';
-
-      // 绘图缩放
       let scale = dispSize / logical;
       ctx.setTransform(pixelRatio * scale, 0, 0, pixelRatio * scale, 0, 0);
-
       render();
   }
   window.addEventListener('resize', resizeCanvas);
@@ -110,36 +118,53 @@
   function render() {
       let s = CELL_SIZE, pad = PADDING;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // 绘制棋盘
+      // 背景内阴影
+      ctx.save();
+      ctx.shadowColor = "#2231c6cc";
+      ctx.shadowBlur = 32;
+      ctx.fillStyle = "#202339";
+      ctx.fillRect(pad-8, pad-8, s*GRID_SIZE+16, s*GRID_SIZE+16);
+      ctx.restore();
+
+      // 棋盘
       for (let row = 0; row < GRID_SIZE; row++) {
           for (let col = 0; col < GRID_SIZE; col++) {
-              if (grid[row][col] === null || grid[row][col] === undefined) continue; // 修复黑块
+              if (grid[row][col] === null || grid[row][col] === undefined) continue;
+              let colorIdx = grid[row][col];
               let x = pad + col * s, y = pad + row * s;
               ctx.save();
-              ctx.fillStyle = COLORS[grid[row][col]];
-              ctx.globalAlpha = 0.92;
-              ctx.fillRect(x, y, s-2, s-2);
 
-              // 高光
-              ctx.globalAlpha = 1;
+              // 渐变块
               let grad = ctx.createLinearGradient(x, y, x+s, y+s);
-              grad.addColorStop(0, "#fff5");
-              grad.addColorStop(1, COLORS[grid[row][col]]);
+              grad.addColorStop(0, COLORS[colorIdx][0]);
+              grad.addColorStop(1, COLORS[colorIdx][1]);
               ctx.fillStyle = grad;
-              ctx.fillRect(x+3, y+3, s-8, s-14);
+              ctx.globalAlpha = 0.99;
+              ctx.fillRect(x, y, s-3, s-3);
+
+              // 发光高光
+              ctx.globalAlpha = 1;
+              let glow = ctx.createRadialGradient(x+s/2, y+s/2, 8, x+s/2, y+s/2, s/1.15);
+              glow.addColorStop(0, "#fff9");
+              glow.addColorStop(1, COLORS[colorIdx][1]+"00");
+              ctx.fillStyle = glow;
+              ctx.fillRect(x+3, y+3, s-8, s-13);
 
               // 边框
-              ctx.strokeStyle = "#222b";
+              ctx.strokeStyle = "#fff2";
               ctx.lineWidth = 2;
-              ctx.strokeRect(x, y, s-2, s-2);
+              ctx.strokeRect(x, y, s-3, s-3);
 
-              // 选中高亮
+              // 选中高亮+光圈
               if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
-                  ctx.strokeStyle = "#ffe153";
-                  ctx.lineWidth = 5;
-                  ctx.shadowColor = "#ffe153";
-                  ctx.shadowBlur = 8;
-                  ctx.strokeRect(x+2, y+2, s-6, s-6);
+                  ctx.save();
+                  ctx.strokeStyle = "#28c7fa";
+                  ctx.shadowColor = "#28c7fa";
+                  ctx.shadowBlur = 16;
+                  ctx.lineWidth = 7;
+                  ctx.globalAlpha = 0.86;
+                  ctx.strokeRect(x+1, y+1, s-5, s-5);
+                  ctx.restore();
               }
               ctx.restore();
           }
@@ -149,7 +174,6 @@
   // 输入与交换
   function getCanvasPosition(e) {
       let rect = canvas.getBoundingClientRect();
-      let pixelRatio = window.devicePixelRatio || 1;
       let x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left);
       let y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top);
       let logical = GRID_SIZE * CELL_SIZE + PADDING * 2;
@@ -199,7 +223,6 @@
 
   function findMatches() {
       let matches = [];
-      // 行
       for (let row = 0; row < GRID_SIZE; row++) {
           let cnt = 1, prev = grid[row][0];
           for (let col = 1; col < GRID_SIZE; col++) {
@@ -211,7 +234,6 @@
           }
           if (cnt >= 3) matches.push({ type:'row', row, col:GRID_SIZE-cnt, len:cnt });
       }
-      // 列
       for (let col = 0; col < GRID_SIZE; col++) {
           let cnt = 1, prev = grid[0][col];
           for (let row = 1; row < GRID_SIZE; row++) {
@@ -270,7 +292,6 @@
       }, 140);
   }
 
-  // 交互
   canvas.addEventListener('click', handleInput);
   canvas.addEventListener('touchstart', handleInput);
   function handleInput(e) {
@@ -328,12 +349,10 @@
           render();
           return;
       }
-      // 步数型三消可不用暂停
   });
 
-  // 初始化
   initGame();
-  setTimeout(resizeCanvas, 20);
+  setTimeout(resizeCanvas, 30);
 
   </script>
 </body>
