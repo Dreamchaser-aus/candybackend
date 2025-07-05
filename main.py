@@ -175,11 +175,45 @@ def invitees():
 
 @app.route("/admin/rank/today")
 def rank_today():
+    from datetime import datetime
+    # 获取前端选定日期（默认为今天）
+    date_str = request.args.get("date")
+    if not date_str:
+        date = datetime.now().date()
+        date_str = date.strftime("%Y-%m-%d")
+    else:
+        date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
     with get_conn() as conn:
         with conn.cursor() as c:
-            c.execute("SELECT * FROM users ORDER BY points DESC LIMIT 100")
-            users = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
-    return render_template("rank_today.html", users=users)
+            # 查该日每用户积分总和并关联用户基本信息
+            c.execute("""
+                SELECT
+                    u.user_id,
+                    u.username,
+                    u.phone,
+                    u.created_at,
+                    u.last_game_time,
+                    COALESCE(SUM(g.user_roll), 0) as day_points
+                FROM users u
+                LEFT JOIN game_logs g ON u.user_id = g.user_id AND g.timestamp::date = %s
+                GROUP BY u.user_id, u.username, u.phone, u.created_at, u.last_game_time
+                ORDER BY day_points DESC
+                LIMIT 100
+            """, (date_str,))
+            users = [
+                {
+                    "user_id": row[0],
+                    "username": row[1],
+                    "phone": row[2],
+                    "created_at": row[3],
+                    "last_game_time": row[4],
+                    "points": row[5]
+                }
+                for row in c.fetchall()
+            ]
+
+    return render_template("rank_today.html", users=users, date=date_str)
 
 @app.route("/user/save", methods=["POST"])
 def save_user():
