@@ -3,10 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <title>Telegram 用户后台管理</title>
-  <!-- Bootstrap5 -->
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- daterangepicker 依赖 -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
   <style>
     body { background: #f6f7fb; font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', Arial, sans-serif;}
     .navbar { box-shadow: 0 2px 10px 0 #eaeaea; }
@@ -27,6 +32,16 @@
     @media (max-width: 600px) {
       .table-responsive { font-size: 0.93rem;}
       .stats-bar { font-size: 0.98rem;}
+      .daterangepicker { font-size: 0.95rem;}
+    }
+    /* daterangepicker视觉细化 */
+    .daterangepicker td.available:hover, .daterangepicker th.available:hover {
+      background: #eaf1fb;
+      color: #2366d1;
+    }
+    .daterangepicker .ranges li.active {
+      background-color: #2366d1;
+      color: #fff;
     }
   </style>
   <script>
@@ -52,6 +67,49 @@ async function deleteUser(userId) {
   });
   location.reload();
 }
+
+$(function() {
+  // 取后端传入的起止值
+  let start = "{{ request.args.get('start_date', '') }}";
+  let end = "{{ request.args.get('end_date', '') }}";
+  let val = "";
+  if (start && end) {
+    val = start + " - " + end;
+    $('#date-range').val(val);
+  }
+
+  $('#date-range').daterangepicker({
+    autoUpdateInput: false,
+    locale: {
+      format: 'YYYY-MM-DD',
+      applyLabel: "确定",
+      cancelLabel: "清空",
+      fromLabel: "起始",
+      toLabel: "结束",
+      customRangeLabel: "自定义",
+      daysOfWeek: ["日", "一", "二", "三", "四", "五", "六"],
+      monthNames: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+    },
+    ranges: {
+       '今日': [moment(), moment()],
+       '本周': [moment().startOf('week'), moment().endOf('week')],
+       '本月': [moment().startOf('month'), moment().endOf('month')],
+       '全部': [moment("2020-01-01"), moment()]
+    }
+  });
+
+  $('#date-range').on('apply.daterangepicker', function(ev, picker) {
+    $('#start_date').val(picker.startDate.format('YYYY-MM-DD'));
+    $('#end_date').val(picker.endDate.format('YYYY-MM-DD'));
+    $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+  });
+
+  $('#date-range').on('cancel.daterangepicker', function(ev, picker) {
+    $('#start_date').val('');
+    $('#end_date').val('');
+    $(this).val('');
+  });
+});
   </script>
 </head>
 <body>
@@ -68,16 +126,16 @@ async function deleteUser(userId) {
   </nav>
   <div class="container" style="max-width: 98vw;">
     <div class="card p-4 mb-4">
-      <!-- 搜索表单 -->
-      <form class="row g-2 align-items-center mb-3" method="get" action="/admin">
+      <!-- 搜索表单：日期区间 + 关键词 + 状态 -->
+      <form class="row g-2 align-items-center mb-3" method="get" action="/admin" autocomplete="off">
+        <div class="col-12 col-md-4">
+          <input type="text" id="date-range" class="form-control" placeholder="选择日期区间" readonly
+                 style="background:#fff;cursor:pointer;">
+          <input type="hidden" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}">
+          <input type="hidden" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
+        </div>
         <div class="col-12 col-md-4">
           <input type="text" class="form-control" name="q" placeholder="用户名 / 手机号 / 邀请人用户名" value="{{ request.args.q or '' }}">
-        </div>
-        <div class="col-6 col-md-2">
-          <input type="date" class="form-control" name="start_date" value="{{ request.args.get('start_date', '') }}" title="注册起始日期">
-        </div>
-        <div class="col-6 col-md-2">
-          <input type="date" class="form-control" name="end_date" value="{{ request.args.get('end_date', '') }}" title="注册结束日期">
         </div>
         <div class="col-6 col-md-2">
           <select class="form-select" name="filter">
