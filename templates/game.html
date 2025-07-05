@@ -54,24 +54,33 @@
   let gameActive = false;
   let selectedCell = null, animating = false;
 
-  // 高清 Canvas 适配
+  // 高清+适配：始终完整显示棋盘
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   function resizeCanvas() {
-      let logical = GRID_SIZE * CELL_SIZE + PADDING*2;
+      let logical = GRID_SIZE * CELL_SIZE + PADDING * 2;
+      // 预留顶部和底部区域，220像素用于标题/按钮/分数
+      let availW = window.innerWidth - 20;
+      let availH = window.innerHeight - 220;
+      let dispSize = Math.min(availW, availH, 520, logical); // 最多不超过520像素
       let pixelRatio = window.devicePixelRatio || 1;
-      let dispWidth = Math.min(window.innerWidth, window.innerHeight, 520) - 12;
-      let scale = dispWidth / logical;
+
+      // 物理像素
       canvas.width = logical * pixelRatio;
       canvas.height = logical * pixelRatio;
-      canvas.style.width = logical * scale + 'px';
-      canvas.style.height = logical * scale + 'px';
+
+      // 显示尺寸
+      canvas.style.width = dispSize + 'px';
+      canvas.style.height = dispSize + 'px';
+
+      // 绘图缩放
+      let scale = dispSize / logical;
       ctx.setTransform(pixelRatio * scale, 0, 0, pixelRatio * scale, 0, 0);
+
       render();
   }
   window.addEventListener('resize', resizeCanvas);
 
-  // 初始化新盘面
   function randomColor() { return Math.floor(Math.random()*COLORS.length);}
   function fillGridNoMatch() {
       for (let row = 0; row < GRID_SIZE; row++) {
@@ -143,9 +152,9 @@
       let pixelRatio = window.devicePixelRatio || 1;
       let x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left);
       let y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top);
-      let dispWidth = Math.min(window.innerWidth, window.innerHeight, 520) - 12;
-      let logical = GRID_SIZE * CELL_SIZE + PADDING*2;
-      let scale = logical / dispWidth;
+      let logical = GRID_SIZE * CELL_SIZE + PADDING * 2;
+      let cssW = parseFloat(canvas.style.width);
+      let scale = logical / cssW;
       return { x: x*scale, y: y*scale };
   }
   function getCellFromPosition(x, y) {
@@ -319,7 +328,7 @@
           render();
           return;
       }
-      // 暂停可实现，但三消步数型一般无暂停
+      // 步数型三消可不用暂停
   });
 
   // 初始化
