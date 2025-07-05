@@ -17,6 +17,7 @@
       user-select: none;
       -webkit-user-select: none;
       -webkit-tap-highlight-color: transparent;
+      min-width: 240px; min-height: 240px;
     }
     #scorebar {
       font-size:1.14rem; letter-spacing:.03em; display:flex; justify-content:center; gap:1.9em; margin-bottom:14px;
@@ -41,7 +42,7 @@
 <body>
   <h1>三消积分游戏</h1>
   <div class="game-box">
-    <canvas id="gameCanvas"></canvas>
+    <canvas id="gameCanvas" width="480" height="480"></canvas>
     <div id="scorebar">
         <span>分数: <b id="score">0</b></span>
         <span>步数: <b id="moves">30</b></span>
@@ -63,7 +64,6 @@
     if (e.target === canvas) e.preventDefault();
   }, {passive:false});
 
-  // 三消游戏逻辑
   const GRID_SIZE = 8;
   const CELL_SIZE = 56;
   const PADDING = 14;
@@ -99,7 +99,6 @@
       ctx.setTransform(pixelRatio * scale, 0, 0, pixelRatio * scale, 0, 0);
       render();
   }
-  window.addEventListener('resize', resizeCanvas);
 
   function randomColor() { return Math.floor(Math.random()*COLORS.length);}
   function fillGridNoMatch() {
@@ -293,9 +292,9 @@
       }, 140);
   }
 
-  // 支持点选+滑动换位+禁止网页滚动
   let touchStartCell = null;
   let touchMoved = false;
+
   canvas.addEventListener('click', handleInput);
 
   canvas.addEventListener('touchstart', function(e) {
@@ -313,7 +312,6 @@
       let pos = getCanvasPosition(e);
       let cell = getCellFromPosition(pos.x, pos.y);
       if (!cell) return;
-      // 滑到相邻格子就交换
       if (areAdjacent(touchStartCell, cell)) {
           trySwap(touchStartCell, cell);
           touchMoved = true;
@@ -324,7 +322,6 @@
 
   canvas.addEventListener('touchend', function(e) {
       if (!touchMoved) {
-          // 没有滑动就当成点击（选中）
           handleInput(e);
       }
       touchStartCell = null;
@@ -362,4 +359,42 @@
       submitScore();
   }
   function restartGame() {
-      document.getElementById
+      document.getElementById('gameOverModal').style.display = 'none';
+      initGame();
+      resizeCanvas();
+  }
+
+  // 你的后端用户ID
+  let userId = '100001';
+  function submitScore() {
+      $.post("/play", {
+          user_id: userId,
+          score: score,
+          game_name: "三消游戏"
+      }, function(data) {
+          // 上传成功逻辑
+      }).fail(function(err) {
+          alert("提交失败: " + (err.responseJSON?.error || "未知错误"));
+      });
+  }
+
+  document.getElementById('controlButton').addEventListener('click', () => {
+      if (!gameActive) {
+          gameActive = true;
+          document.getElementById('controlButton').textContent = "暂停";
+          render();
+          return;
+      }
+  });
+
+  // 初始保证一定显示
+  window.onload = function() {
+    resizeCanvas();
+    initGame();
+    setTimeout(resizeCanvas, 300);  // 兼容iOS部分机型
+  };
+  window.addEventListener('resize', resizeCanvas);
+
+  </script>
+</body>
+</html>
