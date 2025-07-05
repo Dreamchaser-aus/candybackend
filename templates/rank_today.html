@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <title>今日排行榜</title>
+  <title>排行榜</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -38,7 +38,16 @@
       <a class="btn btn-outline-primary btn-sm back-link" href="/admin">&#8592; 返回后台管理</a>
     </div>
     <div class="card p-4">
-      <h4 class="mb-4">今日排行榜 <span class="fs-6 text-muted">(前100名)</span></h4>
+      <!-- 日期选择器表单 -->
+      <form class="row g-2 align-items-center mb-4" method="get" action="/admin/rank/today">
+        <div class="col-auto">
+          <input type="date" class="form-control" name="date" value="{{ date }}">
+        </div>
+        <div class="col-auto">
+          <button class="btn btn-primary" type="submit">查看榜单</button>
+        </div>
+      </form>
+      <h4 class="mb-4">排行榜 <span class="fs-6 text-muted">({{ date or '今日' }}) 前100名</span></h4>
       <div class="table-responsive">
         <table class="table table-bordered table-striped table-hover align-middle mb-0">
           <thead>
