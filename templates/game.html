@@ -2,209 +2,254 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>积分测试游戏</title>
+    <title>积分测试游戏 - 高清体验版</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
     <style>
-        body { background: #222; color: #fff; text-align: center; font-family: Arial, sans-serif; }
-        canvas { background: #444; display: block; margin: 20px auto; border: 2px solid #fff; }
-        #gameOverModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8);
-                         color: #fff; display: none; justify-content: center; align-items: center; flex-direction: column; }
-        #gameOverModal button { padding: 10px 20px; margin-top: 20px; background: #28a745; color: white;
-                                border: none; border-radius: 5px; cursor: pointer; }
-        #gameOverModal button:hover { background: #218838; }
+        html, body { margin:0; padding:0; background: #222; color: #fff; font-family: "Segoe UI", Arial, sans-serif;}
+        .center { text-align:center; }
+        canvas { background: #333; display: block; margin: 18px auto 12px auto; border-radius: 12px; box-shadow: 0 2px 20px #0006; }
+        #scorebar {font-size:1.1rem; letter-spacing:.02em; display:flex; justify-content:center; gap:1.6em;}
+        #gameOverModal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
+                         color: #fff; display: none; justify-content: center; align-items: center; flex-direction: column; z-index:99; }
+        #gameOverModal button { padding: 10px 32px; margin-top: 28px; background: #ff7900; color: white;
+                                border: none; border-radius: 8px; font-size:1.1rem; cursor: pointer; box-shadow: 0 2px 6px #0004;}
+        #gameOverModal button:hover { background: #ff9800; }
+        #controlButton { margin:10px auto; padding:10px 32px; font-size:1.1rem; background:#18bfff; color:#fff; border:0; border-radius:8px; box-shadow:0 1px 8px #18bfff2b; cursor:pointer; transition:.15s;}
+        #controlButton:hover { background: #0e7dc4;}
+        @media (max-width: 600px) {
+            canvas { width: 99vw !important; height: 99vw !important; max-width: 99vw !important; max-height: 99vw !important;}
+        }
     </style>
 </head>
 <body>
-    <h1>积分测试游戏</h1>
-    <canvas id="gameCanvas" width="480" height="480"></canvas>
-    <div>
-        <p>分数: <span id="score">0</span></p>
-        <p>时间: <span id="timer">60</span> 秒</p>
-        <p>步数: <span id="moves">30</span></p>
+    <div class="center"><h1 style="letter-spacing:2px;">高清积分消除测试</h1></div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="scorebar">
+        <span>分数: <b id="score">0</b></span>
+        <span>时间: <b id="timer">60</b>秒</span>
+        <span>步数: <b id="moves">30</b></span>
+    </div>
+    <div class="center">
         <button id="controlButton">开始游戏</button>
     </div>
-
     <div id="gameOverModal">
-        <h2>🎉 游戏结束!</h2>
-        <p>你的分数: <span id="finalScore"></span></p>
-        <button onclick="restartGame()">重新开始</button>
+        <h2 style="font-size:2rem;">🎉 游戏结束!</h2>
+        <p style="font-size:1.2rem;">你的分数: <span id="finalScore"></span></p>
+        <button onclick="restartGame()">再玩一次</button>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        const GRID_SIZE = 8;
-        const CELL_SIZE = 60;
-        const COLORS = ['#e74c3c', '#f1c40f', '#3498db', '#9b59b6', '#2ecc71'];
-        const GAME_TIME = 60;
-        const MAX_MOVES = 30;
+    // ========== 高清画质 Canvas 自动适配 ==========
 
-        let grid = [];
-        let score = 0;
-        let timeLeft = GAME_TIME;
-        let movesLeft = MAX_MOVES;
-        let gameActive = false;
-        let gamePaused = true;
-        let timerInterval = null;
-        let selectedCell = null;
+    const GRID_SIZE = 8;
+    const CELL_SIZE = 60; // 逻辑格子大小
+    const PADDING = 8;
+    const COLORS = [
+        "#ff5757", "#ffe457", "#62d9ee", "#7df27d", "#c17cff",
+        "#fe9b7b", "#b5ead7", "#f38181"
+    ];
+    const GAME_TIME = 60, MAX_MOVES = 30;
 
-        // ✅ 写死 user_id（请写数据库已有）
-        let userId = '100001';
+    let grid = [];
+    let score = 0, timeLeft = GAME_TIME, movesLeft = MAX_MOVES;
+    let gameActive = false, gamePaused = true;
+    let timerInterval = null, selectedCell = null;
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+    // 支持高清显示/自适应屏幕
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas() {
+        let logical = GRID_SIZE * CELL_SIZE + PADDING*2;
+        // 适配窗口
+        let pixelRatio = window.devicePixelRatio || 1;
+        let dispWidth = Math.min(window.innerWidth, window.innerHeight, 540) - 10;
+        let scale = dispWidth / logical;
+        canvas.width = logical * pixelRatio;
+        canvas.height = logical * pixelRatio;
+        canvas.style.width = logical * scale + 'px';
+        canvas.style.height = logical * scale + 'px';
+        ctx.setTransform(pixelRatio * scale, 0, 0, pixelRatio * scale, 0, 0);
+        render();
+    }
+    window.addEventListener('resize', resizeCanvas);
 
-        function initGame() {
-            grid = [];
-            for (let row = 0; row < GRID_SIZE; row++) {
-                grid[row] = [];
-                for (let col = 0; col < GRID_SIZE; col++) {
-                    grid[row][col] = Math.floor(Math.random() * COLORS.length);
-                }
-            }
-            score = 0;
-            timeLeft = GAME_TIME;
-            movesLeft = MAX_MOVES;
-            gameActive = false;
-            gamePaused = true;
-            clearInterval(timerInterval);
-            updateUI();
-            document.getElementById('controlButton').textContent = "开始游戏";
-            render();
-        }
-
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let row = 0; row < GRID_SIZE; row++) {
-                for (let col = 0; col < GRID_SIZE; col++) {
-                    const x = col * CELL_SIZE;
-                    const y = row * CELL_SIZE;
-                    ctx.fillStyle = COLORS[grid[row][col]];
-                    ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-                    ctx.strokeStyle = "#000";
-                    ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-
-                    if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
-                        ctx.strokeStyle = "#FFD700";
-                        ctx.lineWidth = 4;
-                        ctx.strokeRect(x + 2, y + 2, CELL_SIZE - 4, CELL_SIZE - 4);
-                    }
-                }
+    // ==== 逻辑 ====
+    function initGame() {
+        grid = [];
+        for (let row = 0; row < GRID_SIZE; row++) {
+            grid[row] = [];
+            for (let col = 0; col < GRID_SIZE; col++) {
+                grid[row][col] = Math.floor(Math.random() * COLORS.length);
             }
         }
+        score = 0; timeLeft = GAME_TIME; movesLeft = MAX_MOVES;
+        gameActive = false; gamePaused = true;
+        clearInterval(timerInterval);
+        updateUI();
+        document.getElementById('controlButton').textContent = "开始游戏";
+        render();
+    }
 
-        canvas.addEventListener('click', (e) => {
+    function render() {
+        let s = CELL_SIZE, pad = PADDING;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 画棋盘
+        for (let row = 0; row < GRID_SIZE; row++) {
+            for (let col = 0; col < GRID_SIZE; col++) {
+                let x = pad + col * s, y = pad + row * s;
+                ctx.save();
+                // 方块主色
+                ctx.fillStyle = COLORS[grid[row][col]];
+                ctx.globalAlpha = 0.88;
+                ctx.fillRect(x, y, s-2, s-2);
+
+                // 光泽效果
+                ctx.globalAlpha = 1;
+                let grad = ctx.createLinearGradient(x, y, x+s, y+s);
+                grad.addColorStop(0, "#fff4");
+                grad.addColorStop(1, COLORS[grid[row][col]]);
+                ctx.fillStyle = grad;
+                ctx.fillRect(x+3, y+3, s-8, s-14);
+
+                // 边框
+                ctx.strokeStyle = "#222b";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x, y, s-2, s-2);
+
+                // 选中高亮
+                if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
+                    ctx.strokeStyle = "#ffe153";
+                    ctx.lineWidth = 5;
+                    ctx.shadowColor = "#ffe153";
+                    ctx.shadowBlur = 8;
+                    ctx.strokeRect(x+2, y+2, s-6, s-6);
+                }
+                ctx.restore();
+            }
+        }
+    }
+
+    function getCanvasPosition(e) {
+        let rect = canvas.getBoundingClientRect();
+        let pixelRatio = window.devicePixelRatio || 1;
+        let x = ((e.touches ? e.touches[0].clientX : e.clientX) - rect.left);
+        let y = ((e.touches ? e.touches[0].clientY : e.clientY) - rect.top);
+        // 兼容缩放
+        let dispWidth = Math.min(window.innerWidth, window.innerHeight, 540) - 10;
+        let logical = GRID_SIZE * CELL_SIZE + PADDING*2;
+        let scale = logical / dispWidth;
+        return { x: x*scale, y: y*scale };
+    }
+    function getCellFromPosition(x, y) {
+        const col = Math.floor((x-PADDING) / CELL_SIZE);
+        const row = Math.floor((y-PADDING) / CELL_SIZE);
+        if (row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE) {
+            return { row, col };
+        }
+        return null;
+    }
+    function cellsEqual(cell1, cell2) {
+        return cell1 && cell2 && cell1.row === cell2.row && cell1.col === cell2.col;
+    }
+    function areAdjacent(cell1, cell2) {
+        const rowDiff = Math.abs(cell1.row - cell2.row);
+        const colDiff = Math.abs(cell1.col - cell2.col);
+        return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+    }
+    function swapCells(cell1, cell2) {
+        const temp = grid[cell1.row][cell1.col];
+        grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
+        grid[cell2.row][cell2.col] = temp;
+        score += 10;
+        movesLeft--;
+        updateUI();
+        if (movesLeft <= 0) endGame();
+        render();
+    }
+    // 支持鼠标和触摸
+    canvas.addEventListener('click', handleInput);
+    canvas.addEventListener('touchstart', handleInput);
+    function handleInput(e) {
+        if (!gameActive || gamePaused) return;
+        let pos = getCanvasPosition(e);
+        let cell = getCellFromPosition(pos.x, pos.y);
+        if (!selectedCell) {
+            selectedCell = cell;
+        } else if (cellsEqual(selectedCell, cell)) {
+            selectedCell = null;
+        } else if (areAdjacent(selectedCell, cell)) {
+            swapCells(selectedCell, cell);
+            selectedCell = null;
+        } else {
+            selectedCell = cell;
+        }
+        render();
+        if (e.touches) e.preventDefault();
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
             if (!gameActive || gamePaused) return;
-            const pos = getCanvasPosition(e);
-            const cell = getCellFromPosition(pos.x, pos.y);
-
-            if (!selectedCell) {
-                selectedCell = cell;
-            } else if (cellsEqual(selectedCell, cell)) {
-                selectedCell = null;
-            } else if (areAdjacent(selectedCell, cell)) {
-                swapCells(selectedCell, cell);
-                selectedCell = null;
-            } else {
-                selectedCell = cell;
-            }
-            render();
-        });
-
-        function getCanvasPosition(e) {
-            const rect = canvas.getBoundingClientRect();
-            return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-        }
-
-        function getCellFromPosition(x, y) {
-            const col = Math.floor(x / CELL_SIZE);
-            const row = Math.floor(y / CELL_SIZE);
-            if (row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE) {
-                return { row, col };
-            }
-            return null;
-        }
-
-        function cellsEqual(cell1, cell2) {
-            return cell1 && cell2 && cell1.row === cell2.row && cell1.col === cell2.col;
-        }
-
-        function areAdjacent(cell1, cell2) {
-            const rowDiff = Math.abs(cell1.row - cell2.row);
-            const colDiff = Math.abs(cell1.col - cell2.col);
-            return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
-        }
-
-        function swapCells(cell1, cell2) {
-            const temp = grid[cell1.row][cell1.col];
-            grid[cell1.row][cell1.col] = grid[cell2.row][cell2.col];
-            grid[cell2.row][cell2.col] = temp;
-            score += 10;
-            movesLeft--;
+            timeLeft--;
             updateUI();
-            if (movesLeft <= 0) endGame();
-        }
-
-        function startTimer() {
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                if (!gameActive || gamePaused) return;
-                timeLeft--;
-                updateUI();
-                if (timeLeft <= 0 || movesLeft <= 0) {
-                    clearInterval(timerInterval);
-                    endGame();
-                }
-            }, 1000);
-        }
-
-        function updateUI() {
-            document.getElementById('score').textContent = score;
-            document.getElementById('timer').textContent = timeLeft;
-            document.getElementById('moves').textContent = movesLeft;
-        }
-
-        function endGame() {
-            gameActive = false;
-            document.getElementById('finalScore').textContent = score;
-            document.getElementById('gameOverModal').style.display = 'flex';
-            submitScore();
-        }
-
-        function restartGame() {
-            document.getElementById('gameOverModal').style.display = 'none';
-            initGame();
-        }
-
-        function submitScore() {
-            $.post("/play", {
-                user_id: userId,
-                score: score
-            }, function(data) {
-                console.log("✅ 提交成功", data);
-            }).fail(function(err) {
-                alert("提交失败: " + (err.responseJSON?.error || "未知错误"));
-            });
-        }
-
-        document.getElementById('controlButton').addEventListener('click', () => {
-            if (!gameActive) {
-                gameActive = true;
-                gamePaused = false;
-                document.getElementById('controlButton').textContent = "暂停";
-                startTimer();
-                return;
-            }
-            if (gamePaused) {
-                gamePaused = false;
-                document.getElementById('controlButton').textContent = "暂停";
-                startTimer();
-            } else {
-                gamePaused = true;
-                document.getElementById('controlButton').textContent = "继续";
+            if (timeLeft <= 0 || movesLeft <= 0) {
                 clearInterval(timerInterval);
+                endGame();
             }
-        });
-
+        }, 1000);
+    }
+    function updateUI() {
+        document.getElementById('score').textContent = score;
+        document.getElementById('timer').textContent = timeLeft;
+        document.getElementById('moves').textContent = movesLeft;
+    }
+    function endGame() {
+        gameActive = false;
+        document.getElementById('finalScore').textContent = score;
+        document.getElementById('gameOverModal').style.display = 'flex';
+        submitScore();
+    }
+    function restartGame() {
+        document.getElementById('gameOverModal').style.display = 'none';
         initGame();
+    }
+    // 你可以将 userId 换成当前登录用户的实际ID
+    let userId = '100001';
+    function submitScore() {
+        $.post("/play", {
+            user_id: userId,
+            score: score
+        }, function(data) {
+            // 成功可加动画/排行等
+        }).fail(function(err) {
+            alert("提交失败: " + (err.responseJSON?.error || "未知错误"));
+        });
+    }
+    document.getElementById('controlButton').addEventListener('click', () => {
+        if (!gameActive) {
+            gameActive = true;
+            gamePaused = false;
+            document.getElementById('controlButton').textContent = "暂停";
+            startTimer();
+            return;
+        }
+        if (gamePaused) {
+            gamePaused = false;
+            document.getElementById('controlButton').textContent = "暂停";
+            startTimer();
+        } else {
+            gamePaused = true;
+            document.getElementById('controlButton').textContent = "继续";
+            clearInterval(timerInterval);
+        }
+    });
+
+    // 初始化
+    initGame();
+    setTimeout(resizeCanvas, 10);
+
     </script>
 </body>
 </html>
