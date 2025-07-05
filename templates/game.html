@@ -40,7 +40,7 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-  // ================== 三消游戏逻辑核心 ==================
+  // ========== 三消游戏逻辑 ==========
   const GRID_SIZE = 8;
   const CELL_SIZE = 56;
   const PADDING = 10;
@@ -104,6 +104,7 @@
       // 绘制棋盘
       for (let row = 0; row < GRID_SIZE; row++) {
           for (let col = 0; col < GRID_SIZE; col++) {
+              if (grid[row][col] === null || grid[row][col] === undefined) continue; // 修复黑块
               let x = pad + col * s, y = pad + row * s;
               ctx.save();
               ctx.fillStyle = COLORS[grid[row][col]];
@@ -166,14 +167,11 @@
 
   function trySwap(cell1, cell2) {
       if (!gameActive || animating) return;
-      // 交换
       swap(cell1, cell2);
       let matches = findMatches();
       if (matches.length === 0) {
-          // 没有消除，交换回去
           setTimeout(() => { swap(cell1, cell2); selectedCell = null; render(); }, 180);
       } else {
-          // 有消除，扣步数
           movesLeft--;
           processMatches(matches, function() {
               selectedCell = null;
@@ -190,7 +188,6 @@
       grid[cell2.row][cell2.col] = tmp;
   }
 
-  // 查找所有三连
   function findMatches() {
       let matches = [];
       // 行
@@ -220,22 +217,19 @@
       return matches;
   }
 
-  // 消除并下落
   function processMatches(matches, cb) {
       animating = true;
-      // 标记消除
       let toClear = Array.from({length:GRID_SIZE},()=>Array(GRID_SIZE).fill(false));
       for (let m of matches) {
           if (m.type==='row') for(let c=0;c<m.len;c++) toClear[m.row][m.col+c]=true;
           else for(let r=0;r<m.len;r++) toClear[m.row+r][m.col]=true;
       }
-      // 加分
       let cleared = 0;
       for (let r = 0; r < GRID_SIZE; r++) for (let c = 0; c < GRID_SIZE; c++) if (toClear[r][c]) cleared++;
       score += cleared * 20;
       updateUI();
 
-      // 闪烁动画
+      // 消除闪烁动画
       let flashCt=0;
       let flash = setInterval(()=>{
           for (let r=0;r<GRID_SIZE;r++) for(let c=0;c<GRID_SIZE;c++)
@@ -249,7 +243,6 @@
       }, 100);
   }
   function dropAndFill(toClear, cb) {
-      // 下落
       for (let c = 0; c < GRID_SIZE; c++) {
           let pointer = GRID_SIZE-1;
           for (let r = GRID_SIZE-1; r >=0; r--) {
@@ -261,7 +254,6 @@
           for (let r=pointer;r>=0;r--) grid[r][c]=randomColor();
       }
       render();
-      // 检查连锁
       setTimeout(()=>{
           let m = findMatches();
           if(m.length>0) processMatches(m, cb);
