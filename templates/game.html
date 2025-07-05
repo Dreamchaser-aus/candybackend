@@ -51,17 +51,17 @@
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-  // ========== 三消游戏逻辑 ==========
+  // 三消游戏逻辑
   const GRID_SIZE = 8;
   const CELL_SIZE = 56;
   const PADDING = 14;
   const COLORS = [
-      ["#ff6e90", "#ffe9ef"], // 红-渐变
-      ["#ffe457", "#fff7c5"], // 黄
-      ["#62d9ee", "#d8f5ff"], // 蓝
-      ["#7df27d", "#e2ffe7"], // 绿
-      ["#b785f2", "#f3eaff"], // 紫
-      ["#ffad54", "#fff2dd"], // 橙
+      ["#ff6e90", "#ffe9ef"],
+      ["#ffe457", "#fff7c5"],
+      ["#62d9ee", "#d8f5ff"],
+      ["#7df27d", "#e2ffe7"],
+      ["#b785f2", "#f3eaff"],
+      ["#ffad54", "#fff2dd"],
   ];
   const MAX_MOVES = 30;
 
@@ -70,13 +70,13 @@
   let gameActive = false;
   let selectedCell = null, animating = false;
 
-  // 自适应棋盘
+  // 高清自适应
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   function resizeCanvas() {
       let logical = GRID_SIZE * CELL_SIZE + PADDING * 2;
       let availW = window.innerWidth - 24;
-      let availH = window.innerHeight - 320; // 预留标题按钮
+      let availH = window.innerHeight - 320;
       let dispSize = Math.min(availW, availH, 500, logical);
       let pixelRatio = window.devicePixelRatio || 1;
       canvas.width = logical * pixelRatio;
@@ -118,44 +118,34 @@
   function render() {
       let s = CELL_SIZE, pad = PADDING;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      // 背景内阴影
+      // 背景
       ctx.save();
       ctx.shadowColor = "#2231c6cc";
       ctx.shadowBlur = 32;
       ctx.fillStyle = "#202339";
       ctx.fillRect(pad-8, pad-8, s*GRID_SIZE+16, s*GRID_SIZE+16);
       ctx.restore();
-
-      // 棋盘
       for (let row = 0; row < GRID_SIZE; row++) {
           for (let col = 0; col < GRID_SIZE; col++) {
               if (grid[row][col] === null || grid[row][col] === undefined) continue;
               let colorIdx = grid[row][col];
               let x = pad + col * s, y = pad + row * s;
               ctx.save();
-
-              // 渐变块
               let grad = ctx.createLinearGradient(x, y, x+s, y+s);
               grad.addColorStop(0, COLORS[colorIdx][0]);
               grad.addColorStop(1, COLORS[colorIdx][1]);
               ctx.fillStyle = grad;
               ctx.globalAlpha = 0.99;
               ctx.fillRect(x, y, s-3, s-3);
-
-              // 发光高光
               ctx.globalAlpha = 1;
               let glow = ctx.createRadialGradient(x+s/2, y+s/2, 8, x+s/2, y+s/2, s/1.15);
               glow.addColorStop(0, "#fff9");
               glow.addColorStop(1, COLORS[colorIdx][1]+"00");
               ctx.fillStyle = glow;
               ctx.fillRect(x+3, y+3, s-8, s-13);
-
-              // 边框
               ctx.strokeStyle = "#fff2";
               ctx.lineWidth = 2;
               ctx.strokeRect(x, y, s-3, s-3);
-
-              // 选中高亮+光圈
               if (selectedCell && selectedCell.row === row && selectedCell.col === col) {
                   ctx.save();
                   ctx.strokeStyle = "#28c7fa";
@@ -171,12 +161,11 @@
       }
   }
 
-  // 输入与交换
+  // 修正点击和滑动在所有设备上的坐标换算
   function getCanvasPosition(e) {
       let rect = canvas.getBoundingClientRect();
       let x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
       let y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-      // 真实逻辑坐标 = 画布尺寸比例 * 显示坐标
       let scaleX = canvas.width / rect.width;
       let scaleY = canvas.height / rect.height;
       return {
@@ -263,7 +252,6 @@
       score += cleared * 20;
       updateUI();
 
-      // 消除闪烁动画
       let flashCt=0;
       let flash = setInterval(()=>{
           for (let r=0;r<GRID_SIZE;r++) for(let c=0;c<GRID_SIZE;c++)
@@ -295,8 +283,43 @@
       }, 140);
   }
 
+  // ======== 支持点选+滑动换位 =========
+  let touchStartCell = null;
+  let touchMoved = false;
   canvas.addEventListener('click', handleInput);
-  canvas.addEventListener('touchstart', handleInput);
+
+  canvas.addEventListener('touchstart', function(e) {
+      if (!gameActive || animating) return;
+      let pos = getCanvasPosition(e);
+      let cell = getCellFromPosition(pos.x, pos.y);
+      if (!cell) return;
+      touchStartCell = cell;
+      touchMoved = false;
+  }, {passive:false});
+
+  canvas.addEventListener('touchmove', function(e) {
+      if (!touchStartCell || !gameActive || animating) return;
+      let pos = getCanvasPosition(e);
+      let cell = getCellFromPosition(pos.x, pos.y);
+      if (!cell) return;
+      // 滑到相邻格子就交换
+      if (areAdjacent(touchStartCell, cell)) {
+          trySwap(touchStartCell, cell);
+          touchMoved = true;
+          touchStartCell = null;
+      }
+      e.preventDefault();
+  }, {passive:false});
+
+  canvas.addEventListener('touchend', function(e) {
+      if (!touchMoved) {
+          // 没有滑动就当成点击（选中）
+          handleInput(e);
+      }
+      touchStartCell = null;
+      touchMoved = false;
+  }, {passive:false});
+
   function handleInput(e) {
       if (!gameActive || animating) return;
       let pos = getCanvasPosition(e);
