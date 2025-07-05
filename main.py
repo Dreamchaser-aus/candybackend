@@ -64,48 +64,56 @@ def admin():
     filter_blocked = request.args.get("filter")
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
+    # 分页参数
+    page = int(request.args.get("page", 1))
+    page_size = int(request.args.get("page_size", 20))
 
-    query = "SELECT * FROM users WHERE TRUE"
+    # 拼装WHERE
+    where_clauses = ["TRUE"]
     params = []
-
     if keyword:
-        query += " AND (username ILIKE %s OR phone ILIKE %s OR inviter ILIKE %s)"
+        where_clauses.append("(username ILIKE %s OR phone ILIKE %s OR inviter ILIKE %s)")
         params += [f"%{keyword}%"] * 3
     if filter_blocked == "1":
-        query += " AND blocked = TRUE"
+        where_clauses.append("blocked = TRUE")
     elif filter_blocked == "0":
-        query += " AND blocked IS FALSE"
+        where_clauses.append("blocked IS FALSE")
     if start_date:
-        query += " AND created_at >= %s"
+        where_clauses.append("created_at >= %s")
         params.append(start_date)
     if end_date:
-        query += " AND created_at <= %s"
+        where_clauses.append("created_at <= %s")
         params.append(end_date)
+    where = " AND ".join(where_clauses)
 
-    query += " ORDER BY created_at DESC"
+    # 查询总数
+    count_query = f"SELECT COUNT(*) FROM users WHERE {where}"
+    user_query = f"SELECT * FROM users WHERE {where} ORDER BY created_at DESC LIMIT %s OFFSET %s"
 
     with get_conn() as conn:
         with conn.cursor() as c:
-            c.execute(query, params)
+            # 获取总用户数
+            c.execute(count_query, params)
+            total = c.fetchone()[0]
+            total_pages = (total + page_size - 1) // page_size if total else 1
+            # 分页查询用户
+            c.execute(user_query, params + [page_size, (page-1)*page_size])
             rows = c.fetchall()
             users = [dict(zip([desc[0] for desc in c.description], row)) for row in rows]
-
-            # ✅ 新增：为每个用户查询被邀请人数
+            # 查询被邀请人数和当日最高分
             for user in users:
                 c.execute("SELECT COUNT(*) FROM users WHERE inviter = %s", (str(user["user_id"]),))
                 user["invited_count"] = c.fetchone()[0]
-            # 查询当日最高分
-            c.execute("""
-                SELECT MAX(user_roll) 
-                FROM game_logs 
-                WHERE user_id = %s 
-                    AND timestamp::date = CURRENT_DATE
-            """, (user["user_id"],))
-            daily_max = c.fetchone()[0]
+                c.execute("""
+                    SELECT MAX(user_roll)
+                    FROM game_logs
+                    WHERE user_id = %s AND timestamp::date = CURRENT_DATE
+                """, (user["user_id"],))
+                user["daily_max_score"] = c.fetchone()[0] or 0
 
-            # 原来的统计逻辑
+            # 数据统计
             c.execute("SELECT COUNT(*) FROM users")
-            total = c.fetchone()[0]
+            total_all = c.fetchone()[0]
             c.execute("SELECT COUNT(*) FROM users WHERE phone IS NOT NULL")
             verified = c.fetchone()[0]
             c.execute("SELECT COUNT(*) FROM users WHERE blocked = TRUE")
@@ -113,8 +121,27 @@ def admin():
             c.execute("SELECT SUM(points) FROM users")
             points = c.fetchone()[0] or 0
 
-    stats = {"total": total, "verified": verified, "blocked": blocked, "points": points}
-    return render_template("admin.html", users=users, stats=stats, request=request, keyword=keyword, page=1, total_pages=1)
+    stats = {"total": total_all, "verified": verified, "blocked": blocked, "points": points}
+
+    # 拼接保留的搜索参数用于分页跳转
+    qstr = ""
+    for k in ["q", "start_date", "end_date", "filter"]:
+        v = request.args.get(k, "")
+        if v:
+            qstr += f"&{k}={v}"
+
+    return render_template(
+        "admin.html",
+        users=users,
+        stats=stats,
+        request=request,
+        page=page,
+        page_size=page_size,
+        total=total,
+        total_pages=total_pages,
+        qstr=qstr,
+        keyword=keyword,
+    )
 
 @app.route("/user/logs")
 def user_logs():
