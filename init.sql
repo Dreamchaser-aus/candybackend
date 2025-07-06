@@ -11,7 +11,21 @@ CREATE TABLE IF NOT EXISTS users (
     blocked BOOLEAN DEFAULT FALSE
 );
 
--- 游戏记录表：记录每一次掷骰子的对局
+-- 补充 token 字段（如不存在则添加），默认10
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='users' AND column_name='token'
+    ) THEN
+        ALTER TABLE users ADD COLUMN token INTEGER DEFAULT 10;
+    END IF;
+END$$;
+
+-- 将已有用户的 token 字段补全（为空或 NULL 时初始化为10）
+UPDATE users SET token = 10 WHERE token IS NULL;
+
+-- 游戏记录表
 CREATE TABLE IF NOT EXISTS game_logs (
     id SERIAL PRIMARY KEY,
     user_id BIGINT,
@@ -19,7 +33,7 @@ CREATE TABLE IF NOT EXISTS game_logs (
     bot_roll INTEGER,
     result TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    game_name TEXT  -- 新增：游戏名称字段，兼容多种游戏
+    game_name TEXT
 );
 
 -- 兼容老表自动加字段（如老库未加 game_name 字段时也能自适应）
