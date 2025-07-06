@@ -245,8 +245,16 @@ def save_user():
     data = request.get_json()
     with get_conn() as conn:
         with conn.cursor() as c:
-            c.execute("UPDATE users SET blocked = %s, points = %s, plays = %s WHERE user_id = %s",
-                      (data["blocked"], data["points"], data["plays"], data["user_id"]))
+            c.execute("""
+                UPDATE users SET blocked = %s, points = %s, plays = %s, token = %s
+                WHERE user_id = %s
+            """, (
+                data.get("blocked", False),
+                data.get("points", 0),
+                data.get("plays", 0),
+                data.get("token", 0),        # 新增！保存token
+                data["user_id"]
+            ))
             conn.commit()
     return jsonify({"status": "ok"})
 
