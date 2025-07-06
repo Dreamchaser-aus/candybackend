@@ -145,6 +145,27 @@ def admin():
         qstr=qstr,
         keyword=keyword,
     )
+    
+@app.route("/api/user_info", methods=["GET"])
+def user_info():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"status": "error", "message": "缺少 user_id"}), 400
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT username, phone, points FROM users WHERE user_id = %s", (user_id,))
+            row = c.fetchone()
+            if row:
+                return jsonify({
+                    "status": "ok",
+                    "user_id": user_id,
+                    "username": row[0],
+                    "phone": row[1],
+                    "points": row[2] or 0,
+                    # 这里可以加 token, plays 等字段
+                })
+            else:
+                return jsonify({"status": "not_found"}), 404
 
 @app.route("/user/logs")
 def user_logs():
