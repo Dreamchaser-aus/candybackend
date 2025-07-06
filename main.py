@@ -289,6 +289,21 @@ def play_game():
             }
     return jsonify(data)
 
+@app.route("/api/check_bind", methods=["GET"])
+def check_bind():
+    user_id = request.args.get("user_id")
+    if not user_id:
+        return jsonify({"status": "error", "message": "缺少 user_id"}), 400
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            c.execute("SELECT phone FROM users WHERE user_id = %s", (user_id,))
+            row = c.fetchone()
+            if row and row[0]:
+                return jsonify({"status": "ok"})
+            else:
+                return jsonify({"status": "not_bind"}), 401
+
+
 @app.template_filter('format_datetime')
 def format_datetime(value):
     if not value:
