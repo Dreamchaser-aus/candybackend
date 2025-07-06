@@ -4,10 +4,13 @@ import psycopg2
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from datetime import datetime
 from dotenv import load_dotenv
+from flask_cors import CORS
 
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/postgres")
 
 def get_conn():
