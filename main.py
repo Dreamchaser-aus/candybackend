@@ -153,7 +153,7 @@ def user_info():
         return jsonify({"status": "error", "message": "缺少 user_id"}), 400
     with get_conn() as conn:
         with conn.cursor() as c:
-            c.execute("SELECT username, phone, points FROM users WHERE user_id = %s", (user_id,))
+            c.execute("SELECT username, phone, points, COALESCE(token, '0'), COALESCE(plays, 0) FROM users WHERE user_id = %s", (user_id,))
             row = c.fetchone()
             if row:
                 return jsonify({
@@ -162,7 +162,8 @@ def user_info():
                     "username": row[0],
                     "phone": row[1],
                     "points": row[2] or 0,
-                    # 这里可以加 token, plays 等字段
+                    "token": int(row[3]) if row[3] else 0,
+                    "plays": row[4] or 0,
                 })
             else:
                 return jsonify({"status": "not_found"}), 404
