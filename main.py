@@ -353,6 +353,10 @@ def format_datetime(value):
         return ""
     return value.strftime("%Y-%m-%d %H:%M:%S")
 
+@app.route("/api/profile", methods=["GET"])
+def profile():
+    return user_info()
+
 if __name__ == "__main__":
     init_tables()  # 自动建表 ✅
     port = int(os.environ.get("PORT", 5000))
