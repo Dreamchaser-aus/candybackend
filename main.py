@@ -294,15 +294,16 @@ def user_bind():
     data = request.get_json()
     user_id = data.get("user_id")
     phone = data.get("phone")
+    username = data.get("username", "")
     if not user_id or not phone:
         return jsonify({"status": "error", "message": "参数不全"}), 400
     with get_conn() as conn:
         with conn.cursor() as c:
             c.execute("""
-                INSERT INTO users (user_id, phone)
-                VALUES (%s, %s)
-                ON CONFLICT (user_id) DO UPDATE SET phone = EXCLUDED.phone
-            """, (user_id, phone))
+                INSERT INTO users (user_id, phone, username)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET phone = EXCLUDED.phone, username = EXCLUDED.username
+            """, (user_id, phone, username))
             conn.commit()
     return jsonify({"status": "ok"})
 
