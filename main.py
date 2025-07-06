@@ -322,6 +322,27 @@ def play_game():
             }
     return jsonify(data)
 
+@app.route("/api/rank")
+def api_rank():
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            c.execute("""
+                SELECT user_id, username, phone, points
+                FROM users
+                ORDER BY points DESC
+                LIMIT 10
+            """)
+            results = [
+                {
+                    "user_id": row[0],
+                    "username": row[1],
+                    "phone": row[2],
+                    "points": row[3]
+                }
+                for row in c.fetchall()
+            ]
+    return jsonify(results)
+
 @app.route("/user/bind", methods=["POST"])
 def user_bind():
     data = request.get_json()
