@@ -289,6 +289,23 @@ def play_game():
             }
     return jsonify(data)
 
+@app.route("/user/bind", methods=["POST"])
+def user_bind():
+    data = request.get_json()
+    user_id = data.get("user_id")
+    phone = data.get("phone")
+    if not user_id or not phone:
+        return jsonify({"status": "error", "message": "参数不全"}), 400
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            c.execute("""
+                INSERT INTO users (user_id, phone)
+                VALUES (%s, %s)
+                ON CONFLICT (user_id) DO UPDATE SET phone = EXCLUDED.phone
+            """, (user_id, phone))
+            conn.commit()
+    return jsonify({"status": "ok"})
+
 @app.route("/api/check_bind", methods=["GET"])
 def check_bind():
     user_id = request.args.get("user_id")
