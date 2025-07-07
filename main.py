@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 from datetime import datetime
 from dotenv import load_dotenv
 from flask_cors import CORS
+from apscheduler.schedulers.background import BackgroundScheduler
 
 load_dotenv()
 
@@ -60,6 +61,19 @@ def init_tables():
             
             conn.commit()
     print("✅ 数据表初始化完成")
+
+def daily_token_update():
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            # 每天+2，最大不超过20
+            c.execute("UPDATE users SET token = LEAST(COALESCE(token,0) + 2, 20)")
+            conn.commit()
+    print("每日token补充完成")
+
+# 启动定时任务
+scheduler = BackgroundScheduler(timezone="Asia/Shanghai")  # 可调整为你服务器时区
+scheduler.add_job(daily_token_update, 'cron', hour=0, minute=0)  # 每天00:00自动执行
+scheduler.start()
     
 @app.route("/admin")
 def admin():
@@ -363,15 +377,22 @@ def user_bind():
     user_id = data.get("user_id")
     phone = data.get("phone")
     username = data.get("username", "")
+    inviter = data.get("inviter")  # 新增参数
+
     if not user_id or not phone:
         return jsonify({"status": "error", "message": "参数不全"}), 400
+
     with get_conn() as conn:
         with conn.cursor() as c:
+            # 插入新用户，token=5，写入inviter
             c.execute("""
-                INSERT INTO users (user_id, phone, username)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (user_id) DO UPDATE SET phone = EXCLUDED.phone, username = EXCLUDED.username
-            """, (user_id, phone, username))
+                INSERT INTO users (user_id, phone, username, inviter, token)
+                VALUES (%s, %s, %s, %s, 5)
+                ON CONFLICT (user_id) DO UPDATE SET phone=EXCLUDED.phone, username=EXCLUDED.username
+            """, (user_id, phone, username, inviter))
+            # 如果有邀请人，奖励邀请人+3 token
+            if inviter:
+                c.execute("UPDATE users SET token = COALESCE(token,0) + 3 WHERE user_id = %s", (inviter,))
             conn.commit()
     return jsonify({"status": "ok"})
 
