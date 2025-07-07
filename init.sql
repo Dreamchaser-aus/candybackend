@@ -45,10 +45,14 @@ BEGIN
 END$$;
 
 -- ----------- 临时升级区块（执行后建议删除）-----------
--- 若token列为文本或有旧脏数据，全部修正为数字并设默认5
+-- 1. 将空/非法 token 置为5，非数字置为0（不会影响已是数字的正常数据）
 UPDATE users SET token = '5' WHERE token IS NULL OR token = '';
 UPDATE users SET token = '0' WHERE token !~ '^\d+$';
+
+-- 2. 强制 token 字段类型转换为 integer
 ALTER TABLE users ALTER COLUMN token TYPE INTEGER USING token::integer;
+
+-- 3. 设置默认值/非空限制（如已设置可无视）
 ALTER TABLE users ALTER COLUMN token SET DEFAULT 5;
 ALTER TABLE users ALTER COLUMN token SET NOT NULL;
 -- ----------- ↑↑↑ 执行完成后可以删除 -------------------
