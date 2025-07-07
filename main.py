@@ -377,25 +377,40 @@ def user_bind():
     user_id = data.get("user_id")
     phone = data.get("phone")
     username = data.get("username", "")
-    inviter = data.get("inviter")  # 新增参数
+    inviter = data.get("inviter")
 
     if not user_id or not phone:
         return jsonify({"status": "error", "message": "参数不全"}), 400
 
     with get_conn() as conn:
         with conn.cursor() as c:
-            # 插入新用户，token=5，写入inviter
-            c.execute("""
-                INSERT INTO users (user_id, phone, username, inviter, token)
-                VALUES (%s, %s, %s, %s, 5)
-                ON CONFLICT (user_id) DO UPDATE SET phone=EXCLUDED.phone, username=EXCLUDED.username
-            """, (user_id, phone, username, inviter))
-            # 如果有邀请人，奖励邀请人+3 token
-            if inviter:
-                c.execute("UPDATE users SET token = COALESCE(token,0) + 3 WHERE user_id = %s", (inviter,))
+            # 查用户是否已被邀请奖励过
+            c.execute("SELECT invited_rewarded FROM users WHERE user_id = %s", (user_id,))
+            row = c.fetchone()
+
+            if row is None:
+                # 新用户，直接插入并奖励
+                c.execute("""
+                    INSERT INTO users (user_id, phone, username, inviter, token, invited_rewarded)
+                    VALUES (%s, %s, %s, %s, 5, %s)
+                """, (user_id, phone, username, inviter, True if inviter else False))
+                if inviter:
+                    c.execute("UPDATE users SET token = token + 3 WHERE user_id = %s", (inviter,))
+            else:
+                # 已存在用户
+                already_rewarded = row[0]
+                # 更新手机号和用户名
+                c.execute("""
+                    UPDATE users SET phone= %s, username=%s WHERE user_id=%s
+                """, (phone, username, user_id))
+
+                # 仅当未奖励过，且这次有inviter，才奖励，并设置奖励标记
+                if not already_rewarded and inviter:
+                    c.execute("UPDATE users SET invited_rewarded = TRUE WHERE user_id = %s", (user_id,))
+                    c.execute("UPDATE users SET token = token + 3 WHERE user_id = %s", (inviter,))
             conn.commit()
     return jsonify({"status": "ok"})
-
+    
 @app.route("/api/check_bind", methods=["GET"])
 def check_bind():
     user_id = request.args.get("user_id")
