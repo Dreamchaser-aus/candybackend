@@ -8,15 +8,16 @@
   <style>
     body { background: #f6f7fa; }
     .main-card {
-      max-width: 900px; margin: 40px auto; border-radius: 20px;
+      max-width: 1100px; margin: 40px auto; border-radius: 20px;
       box-shadow: 0 2px 16px 0 #e1e6f9; background: #fff; padding: 32px 24px;
     }
     .table thead th { background: #f4f8fd; }
     .title-bar { font-size: 1.6rem; font-weight: 700; margin-bottom: 28px; }
     .back-btn { margin-bottom: 24px; }
-    @media (max-width: 600px) {
+    @media (max-width: 700px) {
       .main-card { padding: 8px; }
-      .table th, .table td { font-size: 0.95em; }
+      .table th, .table td { font-size: 0.92em; }
+      .title-bar { font-size: 1.15rem; }
     }
   </style>
 </head>
@@ -31,6 +32,8 @@
           <th>用户名</th>
           <th>手机号</th>
           <th>积分</th>
+          <th>注册时间</th>
+          <th>最后游戏时间</th>
         </tr>
       </thead>
       <tbody>
@@ -40,6 +43,8 @@
           <td>{{ u.username or '-' }}</td>
           <td>{{ u.phone or '未授权' }}</td>
           <td class="fw-bold text-primary">{{ u.points or 0 }}</td>
+          <td>{{ u.created_at|default('', true)[:19] }}</td>
+          <td>{{ u.last_game_time|default('', true)[:19] }}</td>
         </tr>
         {% endfor %}
       </tbody>
