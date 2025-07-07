@@ -62,6 +62,21 @@ def init_tables():
             conn.commit()
     print("✅ 数据表初始化完成")
 
+def fix_token_type():
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            # 先修复数据为数字
+            c.execute("UPDATE users SET token = '5' WHERE token IS NULL OR token = '';")
+            c.execute("UPDATE users SET token = '0' WHERE token !~ '^\d+$';")
+            # 尝试转换为 int 类型
+            try:
+                c.execute("ALTER TABLE users ALTER COLUMN token TYPE INTEGER USING token::integer;")
+                c.execute("ALTER TABLE users ALTER COLUMN token SET DEFAULT 5;")
+                c.execute("ALTER TABLE users ALTER COLUMN token SET NOT NULL;")
+            except Exception as e:
+                print("token 字段类型可能已是整数，忽略错误：", e)
+            conn.commit()
+
 def daily_token_update():
     with get_conn() as conn:
         with conn.cursor() as c:
