@@ -1,4 +1,4 @@
--- 用户表：存储用户基本信息
+-- 1. 用户表：如不存在则创建
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT PRIMARY KEY,
     username TEXT,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     blocked BOOLEAN DEFAULT FALSE
 );
 
--- 如未加 token 字段，则自动添加（默认 10）
+-- 2. 自动补全 token 字段（如无则添加，默认10）
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -22,21 +22,20 @@ BEGIN
     END IF;
 END$$;
 
--- 将已有用户的 token 字段补全（为空或 NULL 时初始化为10）
+-- 3. 补齐历史数据 token 字段（将 NULL 初始化为10）
 UPDATE users SET token = 10 WHERE token IS NULL;
 
--- 游戏记录表：如无则创建，含 game_name 字段
+-- 4. 游戏记录表：如不存在则创建（先不含 game_name 字段）
 CREATE TABLE IF NOT EXISTS game_logs (
     id SERIAL PRIMARY KEY,
     user_id BIGINT,
     user_roll INTEGER,
     bot_roll INTEGER,
     result TEXT,
-    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    game_name TEXT    -- 默认新表有此字段
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 兼容老 game_logs（如无 game_name 字段则补充）
+-- 5. 自动补全 game_logs 的 game_name 字段（如无则添加）
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -46,3 +45,5 @@ BEGIN
         ALTER TABLE game_logs ADD COLUMN game_name TEXT;
     END IF;
 END$$;
+
+-- 可选：后续如有新字段同理补充
