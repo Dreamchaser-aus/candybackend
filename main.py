@@ -279,7 +279,6 @@ def game():
 def play_game():
     user_id = request.form.get("user_id")
     score = int(request.form.get("score", 0))
-    # 新增：支持指定游戏名，默认“骰子对赌”
     game_name = request.form.get("game_name", "骰子对赌")
 
     if not user_id:
@@ -288,20 +287,27 @@ def play_game():
     with get_conn() as conn:
         with conn.cursor() as c:
             # 查询用户
-            c.execute("SELECT points, plays FROM users WHERE user_id = %s", (user_id,))
+            c.execute("SELECT points, plays, COALESCE(token, '0') FROM users WHERE user_id = %s", (user_id,))
             result = c.fetchone()
             if not result:
                 return jsonify({"error": "用户不存在"}), 404
 
-            old_points, old_plays = result
+            old_points, old_plays, old_token = result
+            old_token = int(old_token or 0)
+
+            # 判断是否有足够token
+            if old_token <= 0:
+                return jsonify({"error": "token不足，无法游戏", "token": 0}), 403
+
+            new_token = old_token - 1
             new_points = (old_points or 0) + score
             new_plays = (old_plays or 0) + 1
 
-            # 更新用户积分、次数、时间
-            c.execute("UPDATE users SET points = %s, plays = %s, last_game_time = NOW() WHERE user_id = %s",
-                      (new_points, new_plays, user_id))
+            # 更新用户积分、次数、token、时间
+            c.execute("UPDATE users SET points = %s, plays = %s, token = %s, last_game_time = NOW() WHERE user_id = %s",
+                      (new_points, new_plays, new_token, user_id))
 
-            # 插入 game_logs 表，新增 game_name 字段
+            # 插入 game_logs
             c.execute("""
                 INSERT INTO game_logs (user_id, user_roll, bot_roll, result, timestamp, game_name)
                 VALUES (%s, %s, %s, %s, NOW(), %s)
@@ -310,7 +316,7 @@ def play_game():
             conn.commit()
 
             # 返回用户数据
-            c.execute("SELECT username, phone, points FROM users WHERE user_id = %s", (user_id,))
+            c.execute("SELECT username, phone, points, token FROM users WHERE user_id = %s", (user_id,))
             user = c.fetchone()
             data = {
                 "username": user[0],
@@ -318,7 +324,7 @@ def play_game():
                 "points": user[2],
                 "score": score,
                 "result": "提交成功",
-                "token": "无"
+                "token": int(user[3] or 0)
             }
     return jsonify(data)
 
