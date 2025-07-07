@@ -277,47 +277,64 @@ def game():
 
 @app.route("/play", methods=["POST"])
 def play_game():
-    user_id = request.form.get("user_id")
-    score = int(request.form.get("score", 0))
-    game_name = request.form.get("game_name", "骰子对赌")
+    try:
+        # 打印收到的参数，方便排查
+        print("收到参数:", dict(request.form))
 
-    if not user_id:
-        return jsonify({"error": "缺少 user_id"}), 400
+        user_id = request.form.get("user_id")
+        score_str = request.form.get("score", "0")
+        game_name = request.form.get("game_name", "骰子对赌")
 
-    with get_conn() as conn:
-        with conn.cursor() as c:
-            c.execute("SELECT points, plays, COALESCE(token::int, 0) FROM users WHERE user_id = %s", (user_id,))
-            result = c.fetchone()
-            if not result:
-                return jsonify({"error": "用户不存在"}), 404
+        if not user_id:
+            return jsonify({"error": "缺少 user_id"}), 400
 
-            old_points, old_plays, old_token = result
-            new_points = (old_points or 0) + score
-            new_plays = (old_plays or 0) + 1
-            new_token = max((old_token or 0) - 1, 0)
+        try:
+            score = int(score_str)
+        except Exception as e:
+            return jsonify({"error": f"score字段格式错误，收到: {score_str}"}), 400
 
-            # 更新用户积分、次数、token、时间
-            c.execute("UPDATE users SET points = %s, plays = %s, last_game_time = NOW(), token = %s WHERE user_id = %s",
-                      (new_points, new_plays, new_token, user_id))
+        with get_conn() as conn:
+            with conn.cursor() as c:
+                # 查询用户，打印 token 字段内容
+                c.execute("SELECT points, plays, COALESCE(token::int, 0) FROM users WHERE user_id = %s", (user_id,))
+                result = c.fetchone()
+                print("用户数据: ", result)
+                if not result:
+                    return jsonify({"error": "用户不存在"}), 404
 
-            c.execute("""
-                INSERT INTO game_logs (user_id, user_roll, bot_roll, result, timestamp, game_name)
-                VALUES (%s, %s, %s, %s, NOW(), %s)
-            """, (user_id, score, 0, '游戏结束', game_name))
+                old_points, old_plays, old_token = result
+                new_points = (old_points or 0) + score
+                new_plays = (old_plays or 0) + 1
+                new_token = max((old_token or 0) - 1, 0)
 
-            conn.commit()
+                # 更新用户积分、次数、token、时间
+                c.execute("UPDATE users SET points = %s, plays = %s, last_game_time = NOW(), token = %s WHERE user_id = %s",
+                          (new_points, new_plays, new_token, user_id))
 
-            c.execute("SELECT username, phone, points, COALESCE(token::int, 0) FROM users WHERE user_id = %s", (user_id,))
-            user = c.fetchone()
-            data = {
-                "username": user[0],
-                "phone": user[1],
-                "points": user[2],
-                "score": score,
-                "result": "提交成功",
-                "token": user[3]
-            }
-    return jsonify(data)
+                c.execute("""
+                    INSERT INTO game_logs (user_id, user_roll, bot_roll, result, timestamp, game_name)
+                    VALUES (%s, %s, %s, %s, NOW(), %s)
+                """, (user_id, score, 0, '游戏结束', game_name))
+
+                conn.commit()
+
+                c.execute("SELECT username, phone, points, COALESCE(token::int, 0) FROM users WHERE user_id = %s", (user_id,))
+                user = c.fetchone()
+                data = {
+                    "username": user[0],
+                    "phone": user[1],
+                    "points": user[2],
+                    "score": score,
+                    "result": "提交成功",
+                    "token": user[3]
+                }
+        return jsonify(data)
+
+    except Exception as e:
+        import traceback
+        print("❌ /play接口报错:", e)
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/rank")
 def api_rank():
