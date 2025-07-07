@@ -11,12 +11,12 @@ CREATE TABLE IF NOT EXISTS users (
     blocked BOOLEAN DEFAULT FALSE
 );
 
--- 补充 token 字段（如不存在则添加），默认10
+-- 如未加 token 字段，则自动添加（默认 10）
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name='users' AND column_name='token'
+        WHERE table_name = 'users' AND column_name = 'token'
     ) THEN
         ALTER TABLE users ADD COLUMN token INTEGER DEFAULT 10;
     END IF;
@@ -25,7 +25,7 @@ END$$;
 -- 将已有用户的 token 字段补全（为空或 NULL 时初始化为10）
 UPDATE users SET token = 10 WHERE token IS NULL;
 
--- 游戏记录表
+-- 游戏记录表：如无则创建，含 game_name 字段
 CREATE TABLE IF NOT EXISTS game_logs (
     id SERIAL PRIMARY KEY,
     user_id BIGINT,
@@ -33,15 +33,15 @@ CREATE TABLE IF NOT EXISTS game_logs (
     bot_roll INTEGER,
     result TEXT,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    game_name TEXT
+    game_name TEXT    -- 默认新表有此字段
 );
 
--- 兼容老表自动加字段（如老库未加 game_name 字段时也能自适应）
+-- 兼容老 game_logs（如无 game_name 字段则补充）
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
-        WHERE table_name='game_logs' AND column_name='game_name'
+        WHERE table_name = 'game_logs' AND column_name = 'game_name'
     ) THEN
         ALTER TABLE game_logs ADD COLUMN game_name TEXT;
     END IF;
