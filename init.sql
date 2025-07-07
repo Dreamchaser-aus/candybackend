@@ -22,6 +22,17 @@ BEGIN
     END IF;
 END$$;
 
+-- 检查/添加 invited_rewarded 字段（防刷奖励专用）
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'invited_rewarded'
+    ) THEN
+        ALTER TABLE users ADD COLUMN invited_rewarded BOOLEAN DEFAULT FALSE;
+    END IF;
+END$$;
+
 -- 游戏记录表，含 game_name 字段
 CREATE TABLE IF NOT EXISTS game_logs (
     id SERIAL PRIMARY KEY,
@@ -43,16 +54,3 @@ BEGIN
         ALTER TABLE game_logs ADD COLUMN game_name TEXT;
     END IF;
 END$$;
-
--- ----------- 临时升级区块（执行后建议删除）-----------
--- 1. 将空/非法 token 置为5，非数字置为0（不会影响已是数字的正常数据）
-UPDATE users SET token = '5' WHERE token IS NULL OR token = '';
-UPDATE users SET token = '0' WHERE token !~ '^\d+$';
-
--- 2. 强制 token 字段类型转换为 integer
-ALTER TABLE users ALTER COLUMN token TYPE INTEGER USING token::integer;
-
--- 3. 设置默认值/非空限制（如已设置可无视）
-ALTER TABLE users ALTER COLUMN token SET DEFAULT 5;
-ALTER TABLE users ALTER COLUMN token SET NOT NULL;
--- ----------- ↑↑↑ 执行完成后可以删除 -------------------
