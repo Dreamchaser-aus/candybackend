@@ -400,11 +400,6 @@ def format_datetime(value):
 def profile():
     return user_info()
 
-if __name__ == "__main__":
-    init_tables()  # 自动建表 ✅
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=True, host="0.0.0.0", port=port)
-
 @app.route("/init")
 def run_init_tables():
     try:
@@ -412,4 +407,9 @@ def run_init_tables():
         return "✅ 数据表已初始化/更新", 200
     except Exception as e:
         return f"❌ 初始化失败: {e}", 500
+
+if __name__ == "__main__":
+    init_tables()  # 自动建表 ✅
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
 
