@@ -1,4 +1,4 @@
--- 用户表（确保有token字段，默认5）
+-- 用户表：存储用户基本信息
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT PRIMARY KEY,
     username TEXT,
@@ -8,11 +8,10 @@ CREATE TABLE IF NOT EXISTS users (
     inviter TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_game_time TIMESTAMP,
-    blocked BOOLEAN DEFAULT FALSE,
-    token INTEGER DEFAULT 5   -- 新用户初始5个token
+    blocked BOOLEAN DEFAULT FALSE
 );
 
--- 如果已有users表无token字段，兼容升级
+-- 检查/添加 token 字段（如未有则加，默认5）
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -23,10 +22,7 @@ BEGIN
     END IF;
 END$$;
 
--- 已有老用户的token字段为空时初始化为5
-UPDATE users SET token = 5 WHERE token IS NULL;
-
--- 游戏记录表，含game_name字段
+-- 游戏记录表，含 game_name 字段
 CREATE TABLE IF NOT EXISTS game_logs (
     id SERIAL PRIMARY KEY,
     user_id BIGINT,
@@ -37,7 +33,7 @@ CREATE TABLE IF NOT EXISTS game_logs (
     game_name TEXT
 );
 
--- 兼容老game_logs表无game_name字段
+-- 兼容老 game_logs（如无 game_name 字段则补充）
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -47,3 +43,12 @@ BEGIN
         ALTER TABLE game_logs ADD COLUMN game_name TEXT;
     END IF;
 END$$;
+
+-- ----------- 临时升级区块（执行后建议删除）-----------
+-- 若token列为文本或有旧脏数据，全部修正为数字并设默认5
+UPDATE users SET token = '5' WHERE token IS NULL OR token = '';
+UPDATE users SET token = '0' WHERE token !~ '^\d+$';
+ALTER TABLE users ALTER COLUMN token TYPE INTEGER USING token::integer;
+ALTER TABLE users ALTER COLUMN token SET DEFAULT 5;
+ALTER TABLE users ALTER COLUMN token SET NOT NULL;
+-- ----------- ↑↑↑ 执行完成后可以删除 -------------------
