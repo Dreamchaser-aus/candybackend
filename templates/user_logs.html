@@ -68,7 +68,8 @@
           </tbody>
         </table>
       </div>
-      <!-- 分页控件（如有分页时） -->
+
+      <!-- 分页控件（游戏记录） -->
       {% if total_pages and total_pages > 1 %}
       <nav aria-label="分页" class="mt-3">
         <ul class="pagination justify-content-center">
@@ -90,6 +91,38 @@
         </ul>
       </nav>
       {% endif %}
+    </div>
+
+    <!-- Token 日志卡片 -->
+    <div class="card p-4 mt-4">
+      <h4 class="mb-4">🔋 Token 日志</h4>
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped table-hover align-middle mb-0">
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>变化值</th>
+              <th>原因</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for tlog in token_logs %}
+            <tr>
+              <td>{{ tlog.created_at | format_datetime }}</td>
+              <td class="fw-bold {% if tlog.change > 0 %}text-success{% elif tlog.change < 0 %}text-danger{% else %}text-secondary{% endif %}">
+                {{ tlog.change }}
+              </td>
+              <td>{{ tlog.reason }}</td>
+            </tr>
+            {% endfor %}
+            {% if not token_logs %}
+            <tr>
+              <td colspan="3" class="text-center text-muted py-4">暂无 Token 记录</td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </body>
