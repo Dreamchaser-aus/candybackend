@@ -34,16 +34,24 @@
     <form class="row g-2 align-items-center mb-4" method="get">
       <input type="hidden" name="user_id" value="{{ user_id }}">
       <div class="col-auto">
-        <label for="start_date" class="form-label mb-0 small text-muted">开始日期</label>
-        <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}" class="form-control">
+        <select id="date_filter" name="range" class="form-select">
+          <option value="">选择日期区间</option>
+          <option value="today" {% if range == 'today' %}selected{% endif %}>今日</option>
+          <option value="this_week" {% if range == 'this_week' %}selected{% endif %}>本周</option>
+          <option value="this_month" {% if range == 'this_month' %}selected{% endif %}>本月</option>
+          <option value="all" {% if range == 'all' %}selected{% endif %}>全部</option>
+          <option value="custom" {% if range == 'custom' %}selected{% endif %}>自定义</option>
+        </select>
       </div>
       <div class="col-auto">
-        <label for="end_date" class="form-label mb-0 small text-muted">结束日期</label>
-        <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}" class="form-control">
+        <input type="date" id="start_date" name="start_date" value="{{ start_date or '' }}" class="form-control" placeholder="开始日期">
+      </div>
+      <div class="col-auto">
+        <input type="date" id="end_date" name="end_date" value="{{ end_date or '' }}" class="form-control" placeholder="结束日期">
       </div>
       <div class="col-auto d-flex align-items-end">
         <button type="submit" class="btn btn-primary me-2">筛选</button>
-        <a href="?user_id={{ user_id }}" class="btn btn-outline-secondary">清空筛选</a>
+        <a href="?user_id={{ user_id }}" class="btn btn-outline-secondary">清空</a>
       </div>
     </form>
 
@@ -127,28 +135,29 @@
       </div>
     </div>
 
-    <!-- 分页控件（如有分页） -->
+    <!-- 分页控件 -->
     {% if total_pages and total_pages > 1 %}
     <nav aria-label="分页" class="mt-4">
       <ul class="pagination justify-content-center">
         <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-          <a class="page-link" href="?user_id={{ user_id }}&page={{ page-1 }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}" aria-label="上一页">
+          <a class="page-link" href="?user_id={{ user_id }}&page={{ page-1 }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="上一页">
             <span aria-hidden="true">&laquo;</span>
           </a>
         </li>
         {% for p in range(1, total_pages+1) %}
           <li class="page-item {% if page == p %}active{% endif %}">
-            <a class="page-link" href="?user_id={{ user_id }}&page={{ p }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}">{{ p }}</a>
+            <a class="page-link" href="?user_id={{ user_id }}&page={{ p }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
           </li>
         {% endfor %}
         <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-          <a class="page-link" href="?user_id={{ user_id }}&page={{ page+1 }}&start_date={{ start_date or '' }}&end_date={{ end_date or '' }}" aria-label="下一页">
+          <a class="page-link" href="?user_id={{ user_id }}&page={{ page+1 }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="下一页">
             <span aria-hidden="true">&raquo;</span>
           </a>
         </li>
       </ul>
     </nav>
     {% endif %}
+
   </div>
 </body>
 </html>
