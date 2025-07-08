@@ -238,32 +238,63 @@ def user_logs():
     user_id = request.args.get("user_id")
     page = int(request.args.get("page", 1))
     page_size = 20
+
+    token_page = int(request.args.get("token_page", 1))
+    token_page_size = 20
+
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+
     with get_conn() as conn:
         with conn.cursor() as c:
-            # 游戏记录
-            c.execute("SELECT COUNT(*) FROM game_logs WHERE user_id = %s", (user_id,))
+            # 游戏记录查询
+            where_clauses = ["user_id = %s"]
+            params = [user_id]
+
+            if start_date:
+                where_clauses.append("timestamp >= %s")
+                params.append(start_date)
+            if end_date:
+                where_clauses.append("timestamp <= %s")
+                params.append(end_date)
+
+            where = " AND ".join(where_clauses)
+
+            c.execute(f"SELECT COUNT(*) FROM game_logs WHERE {where}", params)
             total = c.fetchone()[0]
             total_pages = (total + page_size - 1) // page_size if total else 1
-            c.execute("""
-                SELECT * FROM game_logs WHERE user_id = %s
-                ORDER BY timestamp DESC LIMIT %s OFFSET %s
-            """, (user_id, page_size, (page-1)*page_size))
+
+            c.execute(f"""
+                SELECT * FROM game_logs
+                WHERE {where}
+                ORDER BY timestamp DESC
+                LIMIT %s OFFSET %s
+            """, params + [page_size, (page-1)*page_size])
             logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
 
-            # Token 日志
+            # Token 日志查询
+            c.execute("SELECT COUNT(*) FROM token_logs WHERE user_id = %s", (user_id,))
+            token_total = c.fetchone()[0]
+            token_total_pages = (token_total + token_page_size - 1) // token_page_size if token_total else 1
+
             c.execute("""
                 SELECT * FROM token_logs
                 WHERE user_id = %s
                 ORDER BY created_at DESC
-            """, (user_id,))
+                LIMIT %s OFFSET %s
+            """, (user_id, token_page_size, (token_page-1)*token_page_size))
             token_logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
 
     return render_template("user_logs.html",
-                           logs=logs,
-                           token_logs=token_logs,
                            user_id=user_id,
+                           logs=logs,
                            page=page,
-                           total_pages=total_pages)
+                           total_pages=total_pages,
+                           token_logs=token_logs,
+                           token_page=token_page,
+                           token_total_pages=token_total_pages,
+                           start_date=start_date,
+                           end_date=end_date)
     
 @app.route("/invitees")
 def invitees():
