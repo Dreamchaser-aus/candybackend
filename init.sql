@@ -1,4 +1,6 @@
+-- ===========================
 -- 用户表：存储用户基本信息
+-- ===========================
 CREATE TABLE IF NOT EXISTS users (
     user_id BIGINT PRIMARY KEY,
     username TEXT,
@@ -11,7 +13,9 @@ CREATE TABLE IF NOT EXISTS users (
     blocked BOOLEAN DEFAULT FALSE
 );
 
--- 检查/添加 token 字段（如未有则加，默认5）
+-- ===========================
+-- 添加 token 字段（如未有则加，默认 5）
+-- ===========================
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -22,7 +26,9 @@ BEGIN
     END IF;
 END$$;
 
--- 检查/添加 invited_rewarded 字段（防刷奖励专用）
+-- ===========================
+-- 添加 invited_rewarded 字段（防刷奖励标记）
+-- ===========================
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -33,7 +39,9 @@ BEGIN
     END IF;
 END$$;
 
--- 游戏记录表，含 game_name 字段
+-- ===========================
+-- 游戏记录表
+-- ===========================
 CREATE TABLE IF NOT EXISTS game_logs (
     id SERIAL PRIMARY KEY,
     user_id BIGINT,
@@ -44,7 +52,9 @@ CREATE TABLE IF NOT EXISTS game_logs (
     game_name TEXT
 );
 
--- 兼容老 game_logs（如无 game_name 字段则补充）
+-- ===========================
+-- 兼容旧 game_logs（补 game_name）
+-- ===========================
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -54,3 +64,14 @@ BEGIN
         ALTER TABLE game_logs ADD COLUMN game_name TEXT;
     END IF;
 END$$;
+
+-- ===========================
+-- Token 日志表（新建）
+-- ===========================
+CREATE TABLE IF NOT EXISTS token_logs (
+    id SERIAL PRIMARY KEY,
+    user_id BIGINT,
+    change INTEGER,
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
