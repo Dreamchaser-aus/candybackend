@@ -16,112 +16,96 @@
     .pagination { --bs-pagination-focus-box-shadow: none;}
     @media (max-width: 900px) {
       .container { padding: 0.6rem;}
-      .table { font-size: 0.97rem;}
+      .table { font-size: 0.95rem;}
     }
     @media (max-width: 600px) {
-      .table-responsive { font-size: 0.93rem;}
+      .table-responsive { font-size: 0.9rem;}
     }
     .back-link { text-decoration: none;}
   </style>
 </head>
 <body>
-  <div class="container" style="max-width: 900px;">
+  <div class="container" style="max-width: 1400px;">
     <div class="my-4">
       <a class="btn btn-outline-primary btn-sm back-link" href="/admin">&#8592; 返回后台管理</a>
     </div>
-    <div class="card p-4">
-      <h4 class="mb-4">用户 <span class="text-primary">{{ user_id }}</span> 游戏记录</h4>
-      <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover align-middle mb-0">
-          <thead>
-            <tr>
-              <th>时间</th>
-              <th>游戏名称</th>
-              <th>用户点数</th>
-              <th>机器人点数</th>
-              <th>结果</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for log in logs %}
-            <tr>
-              <td>{{ log.timestamp|format_datetime }}</td>
-              <td>{{ log.game_name or '骰子对赌' }}</td>
-              <td class="fw-bold text-primary">{{ log.user_roll }}</td>
-              <td>{{ log.bot_roll }}</td>
-              <td>
-                {% if "胜" in log.result or "赢" in log.result %}
-                  <span class="text-success">{{ log.result }}</span>
-                {% elif "负" in log.result or "输" in log.result %}
-                  <span class="text-danger">{{ log.result }}</span>
-                {% else %}
-                  <span class="text-secondary">{{ log.result }}</span>
+    <div class="row g-4">
+      <!-- 游戏记录 -->
+      <div class="col-md-6">
+        <div class="card p-4">
+          <h5 class="mb-3">用户 <span class="text-primary">{{ user_id }}</span> 游戏记录</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>游戏名称</th>
+                  <th>用户点数</th>
+                  <th>机器人点数</th>
+                  <th>结果</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for log in logs %}
+                <tr>
+                  <td>{{ log.timestamp|format_datetime }}</td>
+                  <td>{{ log.game_name or '骰子对赌' }}</td>
+                  <td class="fw-bold text-primary">{{ log.user_roll }}</td>
+                  <td>{{ log.bot_roll }}</td>
+                  <td>
+                    {% if "胜" in log.result or "赢" in log.result %}
+                      <span class="text-success">{{ log.result }}</span>
+                    {% elif "负" in log.result or "输" in log.result %}
+                      <span class="text-danger">{{ log.result }}</span>
+                    {% else %}
+                      <span class="text-secondary">{{ log.result }}</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+                {% if not logs %}
+                <tr>
+                  <td colspan="5" class="text-center text-muted py-4">暂无记录</td>
+                </tr>
                 {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-            {% if not logs %}
-            <tr>
-              <td colspan="5" class="text-center text-muted py-4">暂无记录</td>
-            </tr>
-            {% endif %}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
-      <!-- 分页控件（游戏记录） -->
-      {% if total_pages and total_pages > 1 %}
-      <nav aria-label="分页" class="mt-3">
-        <ul class="pagination justify-content-center">
-          <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-            <a class="page-link" href="?user_id={{ user_id }}&page={{ page-1 }}" aria-label="上一页">
-              <span aria-hidden="true">&laquo;</span>
-            </a>
-          </li>
-          {% for p in range(1, total_pages+1) %}
-            <li class="page-item {% if page == p %}active{% endif %}">
-              <a class="page-link" href="?user_id={{ user_id }}&page={{ p }}">{{ p }}</a>
-            </li>
-          {% endfor %}
-          <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-            <a class="page-link" href="?user_id={{ user_id }}&page={{ page+1 }}" aria-label="下一页">
-              <span aria-hidden="true">&raquo;</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-      {% endif %}
-    </div>
-
-    <!-- Token 日志卡片 -->
-    <div class="card p-4 mt-4">
-      <h4 class="mb-4">🔋 Token 日志</h4>
-      <div class="table-responsive">
-        <table class="table table-bordered table-striped table-hover align-middle mb-0">
-          <thead>
-            <tr>
-              <th>时间</th>
-              <th>变化值</th>
-              <th>原因</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for tlog in token_logs %}
-            <tr>
-              <td>{{ tlog.created_at | format_datetime }}</td>
-              <td class="fw-bold {% if tlog.change > 0 %}text-success{% elif tlog.change < 0 %}text-danger{% else %}text-secondary{% endif %}">
-                {{ tlog.change }}
-              </td>
-              <td>{{ tlog.reason }}</td>
-            </tr>
-            {% endfor %}
-            {% if not token_logs %}
-            <tr>
-              <td colspan="3" class="text-center text-muted py-4">暂无 Token 记录</td>
-            </tr>
-            {% endif %}
-          </tbody>
-        </table>
+      <!-- Token 日志 -->
+      <div class="col-md-6">
+        <div class="card p-4">
+          <h5 class="mb-3">🪙 Token 日志</h5>
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>变化值</th>
+                  <th>原因</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for token in token_logs %}
+                <tr>
+                  <td>{{ token.created_at|format_datetime }}</td>
+                  <td class="fw-bold {% if token.change > 0 %}text-success{% else %}text-danger{% endif %}">
+                    {{ token.change }}
+                  </td>
+                  <td>{{ token.reason }}</td>
+                </tr>
+                {% endfor %}
+                {% if not token_logs %}
+                <tr>
+                  <td colspan="3" class="text-center text-muted py-4">暂无 Token 记录</td>
+                </tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   </div>
