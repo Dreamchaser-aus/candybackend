@@ -371,6 +371,42 @@ def api_rank():
             ]
     return jsonify(results)
 
+@app.route("/api/rank/today", methods=["GET"])
+def api_rank_today():
+    from datetime import datetime
+    date_str = request.args.get("date")
+    if not date_str:
+        date = datetime.now().date()
+        date_str = date.strftime("%Y-%m-%d")
+    else:
+        date = datetime.strptime(date_str, "%Y-%m-%d").date()
+
+    with get_conn() as conn:
+        with conn.cursor() as c:
+            c.execute("""
+                SELECT
+                    u.user_id,
+                    u.username,
+                    u.phone,
+                    COALESCE(MAX(g.user_roll), 0) as max_score
+                FROM users u
+                LEFT JOIN game_logs g ON u.user_id = g.user_id AND g.timestamp::date = %s
+                GROUP BY u.user_id, u.username, u.phone
+                ORDER BY max_score DESC
+                LIMIT 20
+            """, (date_str,))
+            users = [
+                {
+                    "user_id": row[0],
+                    "username": row[1],
+                    "phone": row[2],
+                    "max_score": row[3]
+                }
+                for row in c.fetchall()
+            ]
+
+    return jsonify(users)
+
 @app.route("/user/bind", methods=["POST"])
 def user_bind():
     data = request.get_json()
