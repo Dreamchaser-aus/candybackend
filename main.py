@@ -34,20 +34,36 @@ def init_tables():
                     blocked BOOLEAN DEFAULT FALSE
                 );
             """)
-            
-            # 确保 token 字段存在
+
+            # 确保 token 字段存在，并且为 INTEGER 类型，默认 5
             c.execute("""
                 DO $$
                 BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                                   WHERE table_name='users' AND column_name='token') THEN
-                        ALTER TABLE users ADD COLUMN token TEXT;
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='users' AND column_name='token'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN token INTEGER DEFAULT 5;
                     END IF;
                 END
                 $$;
             """)
-            
-            # 创建 game_logs 表
+
+            # 确保 invited_rewarded 字段存在
+            c.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='users' AND column_name='invited_rewarded'
+                    ) THEN
+                        ALTER TABLE users ADD COLUMN invited_rewarded BOOLEAN DEFAULT FALSE;
+                    END IF;
+                END
+                $$;
+            """)
+
+            # 创建 game_logs 表（含 game_name 字段）
             c.execute("""
                 CREATE TABLE IF NOT EXISTS game_logs (
                     id SERIAL PRIMARY KEY,
@@ -55,10 +71,36 @@ def init_tables():
                     user_roll INTEGER,
                     bot_roll INTEGER,
                     result TEXT,
-                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    game_name TEXT
                 );
             """)
-            
+
+            # 确保 game_logs 表中 game_name 字段存在
+            c.execute("""
+                DO $$
+                BEGIN
+                    IF NOT EXISTS (
+                        SELECT 1 FROM information_schema.columns 
+                        WHERE table_name='game_logs' AND column_name='game_name'
+                    ) THEN
+                        ALTER TABLE game_logs ADD COLUMN game_name TEXT;
+                    END IF;
+                END
+                $$;
+            """)
+
+            # ✅ 创建 token_logs 表
+            c.execute("""
+                CREATE TABLE IF NOT EXISTS token_logs (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT NOT NULL,
+                    change INTEGER NOT NULL,
+                    reason TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+            """)
+
             conn.commit()
     print("✅ 数据表初始化完成")
 
