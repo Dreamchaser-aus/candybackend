@@ -239,62 +239,63 @@ def user_logs():
     page = int(request.args.get("page", 1))
     page_size = 20
 
-    token_page = int(request.args.get("token_page", 1))
-    token_page_size = 20
-
+    # 新增的日期筛选参数
+    range_filter = request.args.get("range", "")
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
 
+    where_clauses = ["user_id = %s"]
+    params = [user_id]
+
+    # 根据 range 参数生成日期条件
+    if range_filter == "today":
+        where_clauses.append("timestamp::date = CURRENT_DATE")
+    elif range_filter == "this_week":
+        where_clauses.append("timestamp >= date_trunc('week', CURRENT_DATE)")
+    elif range_filter == "this_month":
+        where_clauses.append("timestamp >= date_trunc('month', CURRENT_DATE)")
+    elif range_filter == "custom":
+        if start_date:
+            where_clauses.append("timestamp::date >= %s")
+            params.append(start_date)
+        if end_date:
+            where_clauses.append("timestamp::date <= %s")
+            params.append(end_date)
+    # 全部 (不加额外条件)
+
+    where_sql = " AND ".join(where_clauses)
+
     with get_conn() as conn:
         with conn.cursor() as c:
-            # 游戏记录查询
-            where_clauses = ["user_id = %s"]
-            params = [user_id]
-
-            if start_date:
-                where_clauses.append("timestamp >= %s")
-                params.append(start_date)
-            if end_date:
-                where_clauses.append("timestamp <= %s")
-                params.append(end_date)
-
-            where = " AND ".join(where_clauses)
-
-            c.execute(f"SELECT COUNT(*) FROM game_logs WHERE {where}", params)
+            # 游戏记录总数
+            c.execute(f"SELECT COUNT(*) FROM game_logs WHERE {where_sql}", params)
             total = c.fetchone()[0]
             total_pages = (total + page_size - 1) // page_size if total else 1
 
+            # 游戏记录
             c.execute(f"""
                 SELECT * FROM game_logs
-                WHERE {where}
+                WHERE {where_sql}
                 ORDER BY timestamp DESC
                 LIMIT %s OFFSET %s
-            """, params + [page_size, (page-1)*page_size])
+            """, params + [page_size, (page - 1) * page_size])
             logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
 
-            # Token 日志查询
-            c.execute("SELECT COUNT(*) FROM token_logs WHERE user_id = %s", (user_id,))
-            token_total = c.fetchone()[0]
-            token_total_pages = (token_total + token_page_size - 1) // token_page_size if token_total else 1
-
-            c.execute("""
-                SELECT * FROM token_logs
-                WHERE user_id = %s
-                ORDER BY created_at DESC
-                LIMIT %s OFFSET %s
-            """, (user_id, token_page_size, (token_page-1)*token_page_size))
+            # Token 日志
+            c.execute("SELECT * FROM token_logs WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
             token_logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
 
-    return render_template("user_logs.html",
-                           user_id=user_id,
-                           logs=logs,
-                           page=page,
-                           total_pages=total_pages,
-                           token_logs=token_logs,
-                           token_page=token_page,
-                           token_total_pages=token_total_pages,
-                           start_date=start_date,
-                           end_date=end_date)
+    return render_template(
+        "user_logs.html",
+        logs=logs,
+        token_logs=token_logs,
+        user_id=user_id,
+        page=page,
+        total_pages=total_pages,
+        range=range_filter,
+        start_date=start_date,
+        end_date=end_date
+    )
     
 @app.route("/invitees")
 def invitees():
