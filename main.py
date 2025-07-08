@@ -65,10 +65,19 @@ def init_tables():
 def daily_token_update():
     with get_conn() as conn:
         with conn.cursor() as c:
-            # 每天+2，最大不超过20
-            c.execute("UPDATE users SET token = LEAST(COALESCE(token,0) + 2, 20)")
+            c.execute("SELECT user_id, COALESCE(token, 0) FROM users")
+            users = c.fetchall()
+
+            for user_id, current_token in users:
+                new_token = min(current_token + 2, 20)
+                c.execute("UPDATE users SET token = %s WHERE user_id = %s", (new_token, user_id))
+                c.execute("""
+                    INSERT INTO token_logs (user_id, change, reason)
+                    VALUES (%s, %s, %s)
+                """, (user_id, 2, 'daily_bonus'))
+
             conn.commit()
-    print("每日token补充完成")
+    print("✅ 每日 token 补充完成并记录日志")
 
 # 启动定时任务
 scheduler = BackgroundScheduler(timezone="Asia/Shanghai")  # 可调整为你服务器时区
@@ -189,20 +198,31 @@ def user_logs():
     page_size = 20
     with get_conn() as conn:
         with conn.cursor() as c:
-            # 统计总条数
+            # 游戏记录
             c.execute("SELECT COUNT(*) FROM game_logs WHERE user_id = %s", (user_id,))
             total = c.fetchone()[0]
             total_pages = (total + page_size - 1) // page_size if total else 1
-            # 查询本页
-            c.execute("SELECT * FROM game_logs WHERE user_id = %s ORDER BY timestamp DESC LIMIT %s OFFSET %s",
-                      (user_id, page_size, (page-1)*page_size))
+            c.execute("""
+                SELECT * FROM game_logs WHERE user_id = %s
+                ORDER BY timestamp DESC LIMIT %s OFFSET %s
+            """, (user_id, page_size, (page-1)*page_size))
             logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
+
+            # Token 日志
+            c.execute("""
+                SELECT * FROM token_logs
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+            """, (user_id,))
+            token_logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
+
     return render_template("user_logs.html",
                            logs=logs,
+                           token_logs=token_logs,
                            user_id=user_id,
                            page=page,
                            total_pages=total_pages)
-
+    
 @app.route("/invitees")
 def invitees():
     user_id = request.args.get("user_id")
@@ -292,9 +312,6 @@ def game():
 @app.route("/play", methods=["POST"])
 def play_game():
     try:
-        # 打印收到的参数，方便排查
-        print("收到参数:", dict(request.form))
-
         user_id = request.form.get("user_id")
         score_str = request.form.get("score", "0")
         game_name = request.form.get("game_name", "骰子对赌")
@@ -304,15 +321,13 @@ def play_game():
 
         try:
             score = int(score_str)
-        except Exception as e:
+        except:
             return jsonify({"error": f"score字段格式错误，收到: {score_str}"}), 400
 
         with get_conn() as conn:
             with conn.cursor() as c:
-                # 查询用户，打印 token 字段内容
-                c.execute("SELECT points, plays, COALESCE(token::int, 0) FROM users WHERE user_id = %s", (user_id,))
+                c.execute("SELECT points, plays, COALESCE(token, 0) FROM users WHERE user_id = %s", (user_id,))
                 result = c.fetchone()
-                print("用户数据: ", result)
                 if not result:
                     return jsonify({"error": "用户不存在"}), 404
 
@@ -321,18 +336,25 @@ def play_game():
                 new_plays = (old_plays or 0) + 1
                 new_token = max((old_token or 0) - 1, 0)
 
-                # 更新用户积分、次数、token、时间
+                # 更新用户表
                 c.execute("UPDATE users SET points = %s, plays = %s, last_game_time = NOW(), token = %s WHERE user_id = %s",
                           (new_points, new_plays, new_token, user_id))
 
+                # 插入游戏日志
                 c.execute("""
                     INSERT INTO game_logs (user_id, user_roll, bot_roll, result, timestamp, game_name)
                     VALUES (%s, %s, %s, %s, NOW(), %s)
                 """, (user_id, score, 0, '游戏结束', game_name))
 
+                # 插入 token 日志
+                c.execute("""
+                    INSERT INTO token_logs (user_id, change, reason)
+                    VALUES (%s, %s, %s)
+                """, (user_id, -1, 'game_play'))
+
                 conn.commit()
 
-                c.execute("SELECT username, phone, points, COALESCE(token::int, 0) FROM users WHERE user_id = %s", (user_id,))
+                c.execute("SELECT username, phone, points, COALESCE(token, 0) FROM users WHERE user_id = %s", (user_id,))
                 user = c.fetchone()
                 data = {
                     "username": user[0],
@@ -349,7 +371,7 @@ def play_game():
         print("❌ /play接口报错:", e)
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-
+        
 @app.route("/api/rank")
 def api_rank():
     with get_conn() as conn:
