@@ -616,21 +616,7 @@ def run_init_tables():
         return "✅ 数据表已初始化/更新", 200
     except Exception as e:
         return f"❌ 初始化失败: {e}", 500
-
-@app.route("/fix_timezone")
-def fix_timezone():
-    try:
-        with get_conn() as conn:
-            with conn.cursor() as c:
-                # 一次性批量+8小时
-                c.execute("UPDATE users SET created_at = created_at + INTERVAL '8 hours'")
-                c.execute("UPDATE users SET last_game_time = last_game_time + INTERVAL '8 hours'")
-                c.execute("UPDATE game_logs SET timestamp = timestamp + INTERVAL '8 hours'")
-                c.execute("UPDATE token_logs SET created_at = created_at + INTERVAL '8 hours'")
-                conn.commit()
-        return "✅ 批量+8小时成功，请尽快删除该接口！"
-    except Exception as e:
-        return f"❌ 修正失败: {e}", 500
+        
 
 if __name__ == "__main__":
     init_tables()  # 自动建表
