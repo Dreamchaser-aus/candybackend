@@ -8,6 +8,7 @@ from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import session, redirect, url_for, request, render_template
 from functools import wraps
+from flask import session, request
 
 load_dotenv()
 
@@ -17,6 +18,10 @@ CORS(app, supports_credentials=True)
 ADMIN_USER = os.getenv("ADMIN_USER")
 ADMIN_PASS = os.getenv("ADMIN_PASS")
 app.secret_key = os.getenv("SECRET_KEY")
+app.config['BABEL_DEFAULT_LOCALE'] = 'zh'
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
+from flask_babel import Babel, _
+babel = Babel(app)
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/postgres")
 
@@ -616,7 +621,17 @@ def run_init_tables():
         return "✅ 数据表已初始化/更新", 200
     except Exception as e:
         return f"❌ 初始化失败: {e}", 500
-        
+
+@babel.localeselector
+def get_locale():
+    lang = request.args.get('lang')
+    if lang in ['zh', 'en']:
+        session['lang'] = lang
+        return lang
+    if 'lang' in session:
+        return session['lang']
+    return 'zh'
+
 
 if __name__ == "__main__":
     init_tables()  # 自动建表
