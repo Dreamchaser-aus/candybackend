@@ -1,3 +1,6 @@
+-- ============ 强制当前会话使用马来西亚时区 ==============
+SET TIME ZONE 'Asia/Kuala_Lumpur';
+
 -- ===========================
 -- 用户表：存储用户基本信息
 -- ===========================
@@ -75,3 +78,7 @@ CREATE TABLE IF NOT EXISTS token_logs (
     reason TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ============（可选）将数据库时区永久设置为马来西亚时区 ============
+-- 如有权限建议运行（不是所有云平台都支持 init.sql 里放 ALTER DATABASE）
+-- ALTER DATABASE <你的数据库名> SET timezone TO 'Asia/Kuala_Lumpur';
