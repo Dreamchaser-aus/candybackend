@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="{{ get_locale() }}">
 <head>
   <meta charset="UTF-8">
-  <title>Telegram 用户后台管理</title>
+  <title>{{ _('Telegram 用户后台管理') }}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -34,7 +34,6 @@
       .stats-bar { font-size: 0.98rem;}
       .daterangepicker { font-size: 0.95rem;}
     }
-    /* daterangepicker视觉细化 */
     .daterangepicker td.available:hover, .daterangepicker th.available:hover {
       background: #eaf1fb;
       color: #2366d1;
@@ -55,11 +54,11 @@ async function saveUser(userId) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ user_id: userId, blocked, points, token })
   });
-  alert('✅ 已保存');
+  alert('✅ {{ _("已保存") }}');
 }
 
 async function deleteUser(userId) {
-  if (!confirm('确认删除该用户吗？')) return;
+  if (!confirm('{{ _("确认删除该用户吗？") }}')) return;
   await fetch(`/user/delete`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -69,7 +68,6 @@ async function deleteUser(userId) {
 }
 
 $(function() {
-  // 取后端传入的起止值
   let start = "{{ request.args.get('start_date', '') }}";
   let end = "{{ request.args.get('end_date', '') }}";
   let val = "";
@@ -82,19 +80,19 @@ $(function() {
     autoUpdateInput: false,
     locale: {
       format: 'YYYY-MM-DD',
-      applyLabel: "确定",
-      cancelLabel: "清空",
-      fromLabel: "起始",
-      toLabel: "结束",
-      customRangeLabel: "自定义",
-      daysOfWeek: ["日", "一", "二", "三", "四", "五", "六"],
-      monthNames: ["1月", "2月", "3月", "4月", "5月", "6月", "7月", "8月", "9月", "10月", "11月", "12月"]
+      applyLabel: "{{ _('确定') }}",
+      cancelLabel: "{{ _('清空') }}",
+      fromLabel: "{{ _('起始') }}",
+      toLabel: "{{ _('结束') }}",
+      customRangeLabel: "{{ _('自定义') }}",
+      daysOfWeek: ["{{ _('日') }}", "{{ _('一') }}", "{{ _('二') }}", "{{ _('三') }}", "{{ _('四') }}", "{{ _('五') }}", "{{ _('六') }}"],
+      monthNames: ["{{ _('1月') }}", "{{ _('2月') }}", "{{ _('3月') }}", "{{ _('4月') }}", "{{ _('5月') }}", "{{ _('6月') }}", "{{ _('7月') }}", "{{ _('8月') }}", "{{ _('9月') }}", "{{ _('10月') }}", "{{ _('11月') }}", "{{ _('12月') }}"]
     },
     ranges: {
-       '今日': [moment(), moment()],
-       '本周': [moment().startOf('week'), moment().endOf('week')],
-       '本月': [moment().startOf('month'), moment().endOf('month')],
-       '全部': [moment("2020-01-01"), moment()]
+       '{{ _("今日") }}': [moment(), moment()],
+       '{{ _("本周") }}': [moment().startOf('week'), moment().endOf('week')],
+       '{{ _("本月") }}': [moment().startOf('month'), moment().endOf('month')],
+       '{{ _("全部") }}': [moment("2020-01-01"), moment()]
     }
   });
 
@@ -113,14 +111,19 @@ $(function() {
   </script>
 </head>
 <body>
+  <!-- 语言切换按钮 -->
+  <div style="text-align:right;padding:8px 16px;">
+    <a href="{{ url_for(request.endpoint, **request.view_args, **request.args.to_dict(), lang='zh') }}">中文</a> |
+    <a href="{{ url_for(request.endpoint, **request.view_args, **request.args.to_dict(), lang='en') }}">English</a>
+  </div>
   <!-- 顶部导航栏 -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
     <div class="container">
-      <a class="navbar-brand fw-bold text-primary" href="#">Telegram 用户后台管理</a>
+      <a class="navbar-brand fw-bold text-primary" href="#">{{ _('Telegram 用户后台管理') }}</a>
       <div class="ms-auto">
-        <a href="/admin" class="btn btn-outline-secondary btn-sm me-2">&#128260; 刷新</a>
-        <a href="/admin/rank/today" class="btn btn-outline-primary btn-sm me-2">&#128200; 今日排行榜</a>
-        <a href="{{ url_for('admin_logout') }}" class="btn btn-danger btn-sm">退出登录</a>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm me-2">&#128260; {{ _('刷新') }}</a>
+        <a href="/admin/rank/today" class="btn btn-outline-primary btn-sm me-2">&#128200; {{ _('今日排行榜') }}</a>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-danger btn-sm">{{ _('退出登录') }}</a>
       </div>
     </div>
   </nav>
@@ -129,45 +132,45 @@ $(function() {
       <!-- 搜索表单：日期区间 + 关键词 + 状态 + 每页条数 -->
       <form class="row g-2 align-items-center mb-3" method="get" action="/admin" autocomplete="off">
         <div class="col-12 col-md-4">
-          <input type="text" id="date-range" class="form-control" placeholder="选择日期区间" readonly
+          <input type="text" id="date-range" class="form-control" placeholder="{{ _('选择日期区间') }}" readonly
                  style="background:#fff;cursor:pointer;">
           <input type="hidden" id="start_date" name="start_date" value="{{ request.args.get('start_date', '') }}">
           <input type="hidden" id="end_date" name="end_date" value="{{ request.args.get('end_date', '') }}">
         </div>
         <div class="col-12 col-md-3">
-          <input type="text" class="form-control" name="q" placeholder="用户名 / 手机号 / 邀请人用户名" value="{{ request.args.q or '' }}">
+          <input type="text" class="form-control" name="q" placeholder="{{ _('用户名 / 手机号 / 邀请人用户名') }}" value="{{ request.args.q or '' }}">
         </div>
         <div class="col-6 col-md-2">
           <select class="form-select" name="filter">
-            <option value="">全部</option>
-            <option value="0" {% if request.args.filter == '0' %}selected{% endif %}>未封禁</option>
-            <option value="1" {% if request.args.filter == '1' %}selected{% endif %}>已封禁</option>
+            <option value="">{{ _('全部') }}</option>
+            <option value="0" {% if request.args.filter == '0' %}selected{% endif %}>{{ _('未封禁') }}</option>
+            <option value="1" {% if request.args.filter == '1' %}selected{% endif %}>{{ _('已封禁') }}</option>
           </select>
         </div>
         <div class="col-6 col-md-2">
           <select class="form-select" name="page_size" onchange="this.form.submit()">
             {% for sz in [10,20,50,100] %}
-              <option value="{{ sz }}" {% if page_size == sz %}selected{% endif %}>每页{{ sz }}条</option>
+              <option value="{{ sz }}" {% if page_size == sz %}selected{% endif %}>{{ _('每页') }}{{ sz }}{{ _('条') }}</option>
             {% endfor %}
           </select>
         </div>
         <div class="col-12 col-md-1">
-          <button class="btn btn-primary w-100" type="submit">搜索</button>
+          <button class="btn btn-primary w-100" type="submit">{{ _('搜索') }}</button>
         </div>
       </form>
       <!-- 数据统计栏 -->
       <div class="stats-bar px-3 py-2 mb-3 border">
-        总用户数: <b>{{ stats.total }}</b> &nbsp;|&nbsp; 已授权手机号: <b class="text-success">{{ stats.verified }}</b>
-        &nbsp;|&nbsp; 已封禁用户: <b class="text-danger">{{ stats.blocked }}</b> &nbsp;|&nbsp; 总积分: <b class="text-primary">{{ stats.points }}</b>
+        {{ _('总用户数') }}: <b>{{ stats.total }}</b> &nbsp;|&nbsp; {{ _('已授权手机号') }}: <b class="text-success">{{ stats.verified }}</b>
+        &nbsp;|&nbsp; {{ _('已封禁用户') }}: <b class="text-danger">{{ stats.blocked }}</b> &nbsp;|&nbsp; {{ _('总积分') }}: <b class="text-primary">{{ stats.points }}</b>
       </div>
       <!-- 用户表格 -->
       <div class="table-responsive">
         <table class="table table-bordered table-striped table-hover align-middle mb-0">
           <thead>
             <tr>
-              <th>用户ID</th><th>用户名</th><th>手机号</th><th>积分</th><th>当日最高积分</th>
-              <th>剩余次数（token）</th><th>邀请人</th><th>已邀请</th><th>封禁状态</th>
-              <th>注册时间</th><th>最后游戏时间</th><th>操作</th>
+              <th>{{ _('用户ID') }}</th><th>{{ _('用户名') }}</th><th>{{ _('手机号') }}</th><th>{{ _('积分') }}</th><th>{{ _('当日最高积分') }}</th>
+              <th>{{ _('剩余次数（token）') }}</th><th>{{ _('邀请人') }}</th><th>{{ _('已邀请') }}</th><th>{{ _('封禁状态') }}</th>
+              <th>{{ _('注册时间') }}</th><th>{{ _('最后游戏时间') }}</th><th>{{ _('操作') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -175,7 +178,7 @@ $(function() {
             <tr>
               <td>{{ user.user_id }}</td>
               <td>{{ user.username }}</td>
-              <td>{{ user.phone or '未授权' }}</td>
+              <td>{{ user.phone or _('未授权') }}</td>
               <td>
                 <input type="number" id="points-{{ user.user_id }}" value="{{ user.points or 0 }}" class="form-control form-control-sm">
               </td>
@@ -183,25 +186,25 @@ $(function() {
               <td>
                 <input type="number" id="token-{{ user.user_id }}" value="{{ user.token or 0 }}" class="form-control form-control-sm">
               </td>
-              <td>{{ user.inviter or '无' }}</td>
+              <td>{{ user.inviter or _('无') }}</td>
               <td>
-                已邀请 {{ user.invited_count }} 人
+                {{ _('已邀请') }} {{ user.invited_count }} {{ _('人') }}
                 {% if (user.invited_count or 0) > 0 %}
-                  <a class="btn btn-sm btn-outline-primary ms-1" href="/invitees?user_id={{ user.user_id }}">查看</a>
+                  <a class="btn btn-sm btn-outline-primary ms-1" href="/invitees?user_id={{ user.user_id }}">{{ _('查看') }}</a>
                 {% endif %}
               </td>
               <td>
                 <select id="blocked-{{ user.user_id }}" class="form-select form-select-sm">
-                  <option value="0" {% if not user.blocked %}selected{% endif %}>否</option>
-                  <option value="1" {% if user.blocked %}selected{% endif %}>是</option>
+                  <option value="0" {% if not user.blocked %}selected{% endif %}>{{ _('否') }}</option>
+                  <option value="1" {% if user.blocked %}selected{% endif %}>{{ _('是') }}</option>
                 </select>
               </td>
               <td>{{ user.created_at | format_datetime }}</td>
               <td>{{ user.last_game_time | format_datetime }}</td>
               <td>
-                <button class="btn btn-success btn-sm mb-1" onclick="saveUser('{{ user.user_id }}')">保存</button>
-                <button class="btn btn-danger btn-sm mb-1" onclick="deleteUser('{{ user.user_id }}')">删除</button>
-                <a class="btn btn-info btn-sm mt-1" href="/user/logs?user_id={{ user.user_id }}">游戏记录</a>
+                <button class="btn btn-success btn-sm mb-1" onclick="saveUser('{{ user.user_id }}')">{{ _('保存') }}</button>
+                <button class="btn btn-danger btn-sm mb-1" onclick="deleteUser('{{ user.user_id }}')">{{ _('删除') }}</button>
+                <a class="btn btn-info btn-sm mt-1" href="/user/logs?user_id={{ user.user_id }}">{{ _('游戏记录') }}</a>
               </td>
             </tr>
             {% endfor %}
@@ -209,10 +212,10 @@ $(function() {
         </table>
       </div>
       <!-- 分页控件 -->
-      <nav aria-label="分页" class="mt-3">
+      <nav aria-label="{{ _('分页') }}" class="mt-3">
         <ul class="pagination justify-content-center">
           <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-            <a class="page-link" href="?page={{ page-1 }}&page_size={{ page_size }}{{ qstr }}" aria-label="上一页">
+            <a class="page-link" href="?page={{ page-1 }}&page_size={{ page_size }}{{ qstr }}" aria-label="{{ _('上一页') }}">
               <span aria-hidden="true">&laquo;</span>
             </a>
           </li>
@@ -228,7 +231,7 @@ $(function() {
             {% endif %}
           {% endfor %}
           <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-            <a class="page-link" href="?page={{ page+1 }}&page_size={{ page_size }}{{ qstr }}" aria-label="下一页">
+            <a class="page-link" href="?page={{ page+1 }}&page_size={{ page_size }}{{ qstr }}" aria-label="{{ _('下一页') }}">
               <span aria-hidden="true">&raquo;</span>
             </a>
           </li>
