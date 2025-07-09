@@ -6,11 +6,17 @@ from datetime import datetime
 from dotenv import load_dotenv
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask import session, redirect, url_for, request, render_template
+from functools import wraps
 
 load_dotenv()
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
+
+ADMIN_USER = os.getenv("ADMIN_USER")
+ADMIN_PASS = os.getenv("ADMIN_PASS")
+app.secret_key = os.getenv("SECRET_KEY")
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/postgres")
 
@@ -131,8 +137,35 @@ def daily_token_update():
 # 定时任务（只在主进程中启动）
 scheduler = BackgroundScheduler(timezone="Asia/Shanghai")
 scheduler.add_job(daily_token_update, 'cron', hour=0, minute=0)
+
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("admin_logged_in"):
+            return redirect(url_for("admin_login"))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    error = ""
+    if request.method == "POST":
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+        if username == ADMIN_USER and password == ADMIN_PASS:
+            session["admin_logged_in"] = True
+            return redirect(url_for("admin"))
+        else:
+            error = "用户名或密码错误"
+    return render_template("admin_login.html", error=error)
+
+@app.route("/admin/logout")
+def admin_logout():
+    session.pop("admin_logged_in", None)
+    return redirect(url_for("admin_login"))
     
 @app.route("/admin")
+@admin_required
 def admin():
     keyword = request.args.get("q", "")
     filter_blocked = request.args.get("filter")
