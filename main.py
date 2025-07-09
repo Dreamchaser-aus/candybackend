@@ -107,6 +107,13 @@ def init_tables():
 def daily_token_update():
     with get_conn() as conn:
         with conn.cursor() as c:
+            # 加锁，确保同一时间只执行一次
+            c.execute("SELECT pg_try_advisory_lock(123456789)")
+            locked = c.fetchone()[0]
+            if not locked:
+                print("⚠️ 已有其他任务在执行，跳过本次 token 更新")
+                return
+
             c.execute("SELECT user_id, COALESCE(token, 0) FROM users")
             users = c.fetchall()
 
@@ -119,12 +126,11 @@ def daily_token_update():
                 """, (user_id, 2, 'daily_bonus'))
 
             conn.commit()
-    print("✅ 每日 token 补充完成并记录日志")
+            print("✅ 每日 token 补充完成并记录日志")
 
-# 启动定时任务
-scheduler = BackgroundScheduler(timezone="Asia/Shanghai")  # 可调整为你服务器时区
-scheduler.add_job(daily_token_update, 'cron', hour=0, minute=0)  # 每天00:00自动执行
-scheduler.start()
+# 定时任务（只在主进程中启动）
+scheduler = BackgroundScheduler(timezone="Asia/Shanghai")
+scheduler.add_job(daily_token_update, 'cron', hour=0, minute=0)
     
 @app.route("/admin")
 def admin():
@@ -579,6 +585,7 @@ def run_init_tables():
         return f"❌ 初始化失败: {e}", 500
 
 if __name__ == "__main__":
-    init_tables()   # 自动建表
+    init_tables()  # 自动建表
+    scheduler.start()  # ✅ 确保只在主进程启动 scheduler
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=True, host="0.0.0.0", port=port)
