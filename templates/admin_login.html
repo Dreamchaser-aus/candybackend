@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员登录</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { background: #f6f7fb; font-family: 'Segoe UI', Arial, sans-serif; }
+        .login-box {
+            max-width: 340px;
+            margin: 90px auto;
+            padding: 32px 28px 28px 28px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px #b8c7e633;
+        }
+        h2 {
+            text-align: center;
+            color: #4663b6;
+            font-weight: 800;
+            letter-spacing: 2px;
+        }
+        input[type=text], input[type=password] {
+            width: 100%;
+            padding: 10px 12px;
+            margin: 14px 0 20px 0;
+            border: 1px solid #d0d4e0;
+            border-radius: 8px;
+            font-size: 17px;
+            background: #f7faff;
+        }
+        button {
+            width: 100%;
+            background: #4a7dff;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+        .error {
+            color: #e34b4b;
+            text-align: center;
+            margin-bottom: 14px;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+<div class="login-box">
+    <h2>管理员登录</h2>
+    {% if error %}
+        <div class="error">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+        <input type="text" name="username" placeholder="账号" autocomplete="username" required>
+        <input type="password" name="password" placeholder="密码" autocomplete="current-password" required>
+        <button type="submit">登录</button>
+    </form>
+</div>
+</body>
+</html>
