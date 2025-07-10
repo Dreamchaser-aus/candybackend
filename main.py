@@ -622,7 +622,7 @@ def run_init_tables():
     except Exception as e:
         return f"❌ 初始化失败: {e}", 500
 
-@babel.locale_selector
+@babel.localeselector
 def get_locale():
     lang = request.args.get('lang')
     if lang in ['zh', 'en']:
