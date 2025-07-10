@@ -1,14 +1,12 @@
-
 import os
 import psycopg2
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from datetime import datetime
 from dotenv import load_dotenv
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import session, redirect, url_for, request, render_template
 from functools import wraps
-from flask import session, request
+from flask_babel import Babel, _
 
 load_dotenv()
 
@@ -20,10 +18,18 @@ ADMIN_PASS = os.getenv("ADMIN_PASS")
 app.secret_key = os.getenv("SECRET_KEY")
 app.config['BABEL_DEFAULT_LOCALE'] = 'zh'
 app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
-from flask_babel import Babel, _
+
 babel = Babel(app)
 
+# ---- 兼容 Railway 的多语言选择器 ----
+@babel.localeselector
+def get_locale():
+    # 优先 URL 参数 ?lang=，其次浏览器请求头，默认中文
+    return request.args.get('lang') or request.accept_languages.best_match(['zh', 'en']) or 'zh'
+# ------------------------------------
+
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localhost:5432/postgres")
+
 
 def get_conn():
     return psycopg2.connect(DATABASE_URL)
