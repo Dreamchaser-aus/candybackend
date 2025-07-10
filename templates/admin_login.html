@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>管理员后台登录</title>
+    <title>Admin Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         :root {
@@ -128,15 +128,15 @@
     <div class="login-logo">
         <img src="{{ url_for('static', filename='sonic_logo.jpg') }}" alt="Sonic Logo">
     </div>
-    <h2>管理员登录</h2>
-    <div class="login-tip">后台仅限授权账号访问</div>
+    <h2>Admin Login</h2>
+    <div class="login-tip">Admin access only</div>
     {% if error %}
         <div class="error">{{ error }}</div>
     {% endif %}
     <form method="post" autocomplete="on">
-        <input type="text" name="username" placeholder="账号" autocomplete="username" required>
-        <input type="password" name="password" placeholder="密码" autocomplete="current-password" required>
-        <button type="submit">登录</button>
+        <input type="text" name="username" placeholder="Username" autocomplete="username" required>
+        <input type="password" name="password" placeholder="Password" autocomplete="current-password" required>
+        <button type="submit">Login</button>
     </form>
 </div>
 </body>
