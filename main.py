@@ -6,6 +6,10 @@ from datetime import datetime
 from dotenv import load_dotenv
 from flask_cors import CORS
 from apscheduler.schedulers.background import BackgroundScheduler
+
+import flask_babel
+print("Flask-Babel version:", flask_babel.__version__)
+
 from flask import session, redirect, url_for, request, render_template
 from functools import wraps
 from flask import session, request
