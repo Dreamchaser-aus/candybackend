@@ -241,12 +241,13 @@ def admin():
 
     stats = {"total": total_all, "verified": verified, "blocked": blocked, "points": points}
 
-    # 拼接保留的搜索参数用于分页跳转
-    qstr = ""
-    for k in ["q", "start_date", "end_date", "filter"]:
-        v = request.args.get(k, "")
-        if v:
-            qstr += f"&{k}={v}"
+    # ---------- 多语言安全的参数拼接 ----------
+    # 获取当前所有参数，排除 lang（防止重复）
+    import urllib.parse
+    all_args = request.args.to_dict()
+    all_args.pop('lang', None)  # 去掉 lang 避免重复
+    qstr = urllib.parse.urlencode(all_args)
+    # ---------------------------------------
 
     return render_template(
         "admin.html",
@@ -257,7 +258,7 @@ def admin():
         page_size=page_size,
         total=total,
         total_pages=total_pages,
-        qstr=qstr,
+        qstr=qstr,  # 新增：支持全部参数字符串
         keyword=keyword,
     )
     
