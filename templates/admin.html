@@ -113,8 +113,8 @@ $(function() {
 <body>
   <!-- 语言切换按钮 -->
   <div style="text-align:right;padding:8px 16px;">
-    <a href="{{ url_for(request.endpoint, **request.view_args, **request.args.to_dict(), lang='zh') }}">中文</a> |
-    <a href="{{ url_for(request.endpoint, **request.view_args, **request.args.to_dict(), lang='en') }}">English</a>
+    <a href="{{ url_for(request.endpoint) }}{% if qstr %}?{{ qstr }}&{% else %}?{% endif %}lang=zh">中文</a> |
+    <a href="{{ url_for(request.endpoint) }}{% if qstr %}?{{ qstr }}&{% else %}?{% endif %}lang=en">English</a>
   </div>
   <!-- 顶部导航栏 -->
   <nav class="navbar navbar-expand-lg navbar-light bg-white mb-4">
