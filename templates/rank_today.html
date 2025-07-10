@@ -35,7 +35,7 @@
 <body>
   <div class="container" style="max-width: 900px;">
     <div class="my-4">
-      <a class="btn btn-outline-primary btn-sm back-link" href="/admin">&#8592; 返回后台管理</a>
+      <a class="btn btn-outline-primary" href="/admin">{{ _('返回后台管理') }}</a>
     </div>
     <div class="card p-4">
       <!-- 日期选择器表单 -->
@@ -44,7 +44,7 @@
           <input type="date" class="form-control" name="date" value="{{ date }}">
         </div>
         <div class="col-auto">
-          <button class="btn btn-primary" type="submit">查看榜单</button>
+          <button>{{ _('查看榜单') }}</button>
         </div>
       </form>
       <h4 class="mb-4">排行榜 <span class="fs-6 text-muted">({{ date or '今日' }}) 前20名</span></h4>
