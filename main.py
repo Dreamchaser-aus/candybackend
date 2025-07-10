@@ -628,16 +628,6 @@ def run_init_tables():
     except Exception as e:
         return f"❌ 初始化失败: {e}", 500
 
-# 替换掉原有的 @babel.localeselector 为
-@babel.locale_selector
-def get_locale():
-    lang = request.args.get('lang')
-    if lang in ['zh', 'en']:
-        session['lang'] = lang
-        return lang
-    if 'lang' in session:
-        return session['lang']
-    return 'zh'
 
 if __name__ == "__main__":
     init_tables()  # 自动建表
