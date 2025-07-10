@@ -2,6 +2,6 @@ Flask==2.3.3
 psycopg2-binary==2.9.9
 python-dotenv
 Flask-Cors
-Flask-Babel==4.0.0
+Flask-Babel==2.0.0
 Babel==2.12.1
 apscheduler
