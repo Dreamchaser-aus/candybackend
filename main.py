@@ -32,7 +32,10 @@ DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:password@localho
 
 
 def get_conn():
-    return psycopg2.connect(DATABASE_URL)
+    conn = psycopg2.connect(DATABASE_URL)
+    with conn.cursor() as c:
+        c.execute("SET TIMEZONE='Asia/Kuala_Lumpur';")
+    return conn
 
 def init_tables():
     with get_conn() as conn:
