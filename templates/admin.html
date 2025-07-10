@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ get_locale() }}">
+<html lang="{{ g.locale }}">
 <head>
   <meta charset="UTF-8">
   <title>{{ _('Telegram 用户后台管理') }}</title>
@@ -215,14 +215,14 @@ $(function() {
       <nav aria-label="{{ _('分页') }}" class="mt-3">
         <ul class="pagination justify-content-center">
           <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-            <a class="page-link" href="?page={{ page-1 }}&page_size={{ page_size }}{{ qstr }}" aria-label="{{ _('上一页') }}">
+            <a class="page-link" href="?page={{ page-1 }}&page_size={{ page_size }}{% if qstr %}&{{ qstr }}{% endif %}" aria-label="{{ _('上一页') }}">
               <span aria-hidden="true">&laquo;</span>
             </a>
           </li>
           {% for p in range(1, total_pages+1) %}
             {% if total_pages <= 7 or p <= 2 or p > total_pages-2 or (p >= page-1 and p <= page+1) %}
               <li class="page-item {% if page == p %}active{% endif %}">
-                <a class="page-link" href="?page={{ p }}&page_size={{ page_size }}{{ qstr }}">{{ p }}</a>
+                <a class="page-link" href="?page={{ p }}&page_size={{ page_size }}{% if qstr %}&{{ qstr }}{% endif %}">{{ p }}</a>
               </li>
             {% elif p == 3 and page > 4 %}
               <li class="page-item disabled"><span class="page-link">…</span></li>
@@ -231,7 +231,7 @@ $(function() {
             {% endif %}
           {% endfor %}
           <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-            <a class="page-link" href="?page={{ page+1 }}&page_size={{ page_size }}{{ qstr }}" aria-label="{{ _('下一页') }}">
+            <a class="page-link" href="?page={{ page+1 }}&page_size={{ page_size }}{% if qstr %}&{{ qstr }}{% endif %}" aria-label="{{ _('下一页') }}">
               <span aria-hidden="true">&raquo;</span>
             </a>
           </li>
