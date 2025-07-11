@@ -137,26 +137,28 @@
 
     <!-- 分页控件 -->
     {% if total_pages and total_pages > 1 %}
-    <nav aria-label="{{ _('分页') }}" class="mt-4">
-      <ul class="pagination justify-content-center">
-        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-          <a class="page-link" href="?user_id={{ user_id }}&page={{ page-1 }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="{{ _('上一页') }}">
-            <span aria-hidden="true">&laquo;</span>
-          </a>
-        </li>
-        {% for p in range(1, total_pages+1) %}
-          <li class="page-item {% if page == p %}active{% endif %}">
-            <a class="page-link" href="?user_id={{ user_id }}&page={{ p }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
+      <nav aria-label="{{ _('分页') }}" class="mt-4">
+        <ul class="pagination justify-content-center">
+          <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="?user_id={{ user_id }}&page={{ page-1 }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="{{ _('上一页') }}">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
           </li>
-        {% endfor %}
-        <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-          <a class="page-link" href="?user_id={{ user_id }}&page={{ page+1 }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="{{ _('下一页') }}">
-            <span aria-hidden="true">&raquo;</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
+          {% set loop_range = range %}
+          {% for p in range(1, total_pages+1) %}
+            <li class="page-item {% if page == p %}active{% endif %}">
+              <a class="page-link" href="?user_id={{ user_id }}&page={{ p }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
+            </li>
+          {% endfor %}
+          <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+            <a class="page-link" href="?user_id={{ user_id }}&page={{ page+1 }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="{{ _('下一页') }}">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
     {% endif %}
+
 
   </div>
 </body>
