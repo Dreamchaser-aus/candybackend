@@ -346,7 +346,7 @@ def user_logs():
         user_id=user_id,
         page=page,
         total_pages=total_pages,
-        range=range_filter,
+        filter_range=range_filter,
         start_date=start_date,
         end_date=end_date
     )
