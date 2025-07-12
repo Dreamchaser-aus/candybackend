@@ -290,10 +290,11 @@ def user_info():
 @app.route("/user/logs")
 def user_logs():
     user_id = request.args.get("user_id")
-    page = int(request.args.get("page", 1))
+    game_page = int(request.args.get("game_page", 1))
+    token_page = int(request.args.get("token_page", 1))
     page_size = 20
 
-    # 新增的日期筛选参数
+    # 日期筛选参数
     range_filter = request.args.get("range", "")
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
@@ -301,7 +302,7 @@ def user_logs():
     where_clauses = ["user_id = %s"]
     params = [user_id]
 
-    # 根据 range 参数生成日期条件
+    # range参数生成日期条件
     if range_filter == "today":
         where_clauses.append("timestamp::date = CURRENT_DATE")
     elif range_filter == "this_week":
@@ -321,22 +322,30 @@ def user_logs():
 
     with get_conn() as conn:
         with conn.cursor() as c:
-            # 游戏记录总数
+            # Game Log 分页
             c.execute(f"SELECT COUNT(*) FROM game_logs WHERE {where_sql}", params)
-            total = c.fetchone()[0]
-            total_pages = (total + page_size - 1) // page_size if total else 1
+            game_total = c.fetchone()[0]
+            game_total_pages = (game_total + page_size - 1) // page_size if game_total else 1
 
-            # 游戏记录
             c.execute(f"""
                 SELECT * FROM game_logs
                 WHERE {where_sql}
                 ORDER BY timestamp DESC
                 LIMIT %s OFFSET %s
-            """, params + [page_size, (page - 1) * page_size])
+            """, params + [page_size, (game_page - 1) * page_size])
             logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
 
-            # Token 日志
-            c.execute("SELECT * FROM token_logs WHERE user_id = %s ORDER BY created_at DESC", (user_id,))
+            # Token Log 分页
+            c.execute("SELECT COUNT(*) FROM token_logs WHERE user_id = %s", (user_id,))
+            token_total = c.fetchone()[0]
+            token_total_pages = (token_total + page_size - 1) // page_size if token_total else 1
+
+            c.execute("""
+                SELECT * FROM token_logs
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s OFFSET %s
+            """, (user_id, page_size, (token_page - 1) * page_size))
             token_logs = [dict(zip([desc[0] for desc in c.description], row)) for row in c.fetchall()]
 
     return render_template(
@@ -344,9 +353,11 @@ def user_logs():
         logs=logs,
         token_logs=token_logs,
         user_id=user_id,
-        page=page,
-        total_pages=total_pages,
-        filter_range=range_filter,
+        game_page=game_page,
+        game_total_pages=game_total_pages,
+        token_page=token_page,
+        token_total_pages=token_total_pages,
+        range=range_filter,
         start_date=start_date,
         end_date=end_date
     )
