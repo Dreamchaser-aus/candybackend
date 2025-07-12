@@ -36,11 +36,11 @@
       <div class="col-auto">
         <select id="date_filter" name="range" class="form-select">
           <option value="">{{ _('选择日期区间') }}</option>
-          <option value="today" {% if range == 'today' %}selected{% endif %}>{{ _('今日') }}</option>
-          <option value="this_week" {% if range == 'this_week' %}selected{% endif %}>{{ _('本周') }}</option>
-          <option value="this_month" {% if range == 'this_month' %}selected{% endif %}>{{ _('本月') }}</option>
-          <option value="all" {% if range == 'all' %}selected{% endif %}>{{ _('全部') }}</option>
-          <option value="custom" {% if range == 'custom' %}selected{% endif %}>{{ _('自定义') }}</option>
+          <option value="today" {% if filter_range == 'today' %}selected{% endif %}>{{ _('今日') }}</option>
+          <option value="this_week" {% if filter_range == 'this_week' %}selected{% endif %}>{{ _('本周') }}</option>
+          <option value="this_month" {% if filter_range == 'this_month' %}selected{% endif %}>{{ _('本月') }}</option>
+          <option value="all" {% if filter_range == 'all' %}selected{% endif %}>{{ _('全部') }}</option>
+          <option value="custom" {% if filter_range == 'custom' %}selected{% endif %}>{{ _('自定义') }}</option>
         </select>
       </div>
       <div class="col-auto">
@@ -97,26 +97,25 @@
               </tbody>
             </table>
           </div>
-
           <!-- 游戏记录分页控件 -->
           {% if game_total_pages > 1 %}
             <nav aria-label="Game Log 分页" class="mt-3">
               <ul class="pagination justify-content-center">
                 <li class="page-item {% if game_page <= 1 %}disabled{% endif %}">
                   <a class="page-link"
-                     href="?user_id={{ user_id }}&game_page={{ game_page-1 }}&token_page={{ token_page }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                     href="?user_id={{ user_id }}&game_page={{ game_page-1 }}&token_page={{ token_page }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
                     &laquo;
                   </a>
                 </li>
                 {% for p in range(1, game_total_pages+1) %}
                   <li class="page-item {% if game_page == p %}active{% endif %}">
                     <a class="page-link"
-                       href="?user_id={{ user_id }}&game_page={{ p }}&token_page={{ token_page }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
+                       href="?user_id={{ user_id }}&game_page={{ p }}&token_page={{ token_page }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
                   </li>
                 {% endfor %}
                 <li class="page-item {% if game_page >= game_total_pages %}disabled{% endif %}">
                   <a class="page-link"
-                     href="?user_id={{ user_id }}&game_page={{ game_page+1 }}&token_page={{ token_page }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                     href="?user_id={{ user_id }}&game_page={{ game_page+1 }}&token_page={{ token_page }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
                     &raquo;
                   </a>
                 </li>
@@ -157,26 +156,25 @@
               </tbody>
             </table>
           </div>
-
           <!-- Token 日志分页控件 -->
           {% if token_total_pages > 1 %}
             <nav aria-label="Token Log 分页" class="mt-3">
               <ul class="pagination justify-content-center">
                 <li class="page-item {% if token_page <= 1 %}disabled{% endif %}">
                   <a class="page-link"
-                     href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ token_page-1 }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                     href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ token_page-1 }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
                     &laquo;
                   </a>
                 </li>
                 {% for p in range(1, token_total_pages+1) %}
                   <li class="page-item {% if token_page == p %}active{% endif %}">
                     <a class="page-link"
-                       href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ p }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
+                       href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ p }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
                   </li>
                 {% endfor %}
                 <li class="page-item {% if token_page >= token_total_pages %}disabled{% endif %}">
                   <a class="page-link"
-                     href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ token_page+1 }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                     href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ token_page+1 }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
                     &raquo;
                   </a>
                 </li>
