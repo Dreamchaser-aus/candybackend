@@ -97,6 +97,32 @@
               </tbody>
             </table>
           </div>
+
+          <!-- 游戏记录分页控件 -->
+          {% if game_total_pages > 1 %}
+            <nav aria-label="Game Log 分页" class="mt-3">
+              <ul class="pagination justify-content-center">
+                <li class="page-item {% if game_page <= 1 %}disabled{% endif %}">
+                  <a class="page-link"
+                     href="?user_id={{ user_id }}&game_page={{ game_page-1 }}&token_page={{ token_page }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                    &laquo;
+                  </a>
+                </li>
+                {% for p in range(1, game_total_pages+1) %}
+                  <li class="page-item {% if game_page == p %}active{% endif %}">
+                    <a class="page-link"
+                       href="?user_id={{ user_id }}&game_page={{ p }}&token_page={{ token_page }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
+                  </li>
+                {% endfor %}
+                <li class="page-item {% if game_page >= game_total_pages %}disabled{% endif %}">
+                  <a class="page-link"
+                     href="?user_id={{ user_id }}&game_page={{ game_page+1 }}&token_page={{ token_page }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                    &raquo;
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          {% endif %}
         </div>
       </div>
 
@@ -131,35 +157,35 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Token 日志分页控件 -->
+          {% if token_total_pages > 1 %}
+            <nav aria-label="Token Log 分页" class="mt-3">
+              <ul class="pagination justify-content-center">
+                <li class="page-item {% if token_page <= 1 %}disabled{% endif %}">
+                  <a class="page-link"
+                     href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ token_page-1 }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                    &laquo;
+                  </a>
+                </li>
+                {% for p in range(1, token_total_pages+1) %}
+                  <li class="page-item {% if token_page == p %}active{% endif %}">
+                    <a class="page-link"
+                       href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ p }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
+                  </li>
+                {% endfor %}
+                <li class="page-item {% if token_page >= token_total_pages %}disabled{% endif %}">
+                  <a class="page-link"
+                     href="?user_id={{ user_id }}&game_page={{ game_page }}&token_page={{ token_page+1 }}{% if range %}&range={{ range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">
+                    &raquo;
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          {% endif %}
         </div>
       </div>
     </div>
-
-    <!-- 分页控件 -->
-    {% if total_pages and total_pages > 1 %}
-      <nav aria-label="{{ _('分页') }}" class="mt-4">
-        <ul class="pagination justify-content-center">
-          <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-            <a class="page-link" href="?user_id={{ user_id }}&page={{ page-1 }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="{{ _('上一页') }}">
-              <span aria-hidden="true">&laquo;</span>
-            </a>
-          </li>
-          {% set loop_range = range %}
-          {% for p in range(1, total_pages+1) %}
-            <li class="page-item {% if page == p %}active{% endif %}">
-              <a class="page-link" href="?user_id={{ user_id }}&page={{ p }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}">{{ p }}</a>
-            </li>
-          {% endfor %}
-          <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
-            <a class="page-link" href="?user_id={{ user_id }}&page={{ page+1 }}{% if filter_range %}&range={{ filter_range }}{% endif %}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}" aria-label="{{ _('下一页') }}">
-              <span aria-hidden="true">&raquo;</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
-    {% endif %}
-
-
   </div>
 </body>
 </html>
