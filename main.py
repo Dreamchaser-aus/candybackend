@@ -357,7 +357,7 @@ def user_logs():
         game_total_pages=game_total_pages,
         token_page=token_page,
         token_total_pages=token_total_pages,
-        range=range_filter,
+        filter_range=range_filter,
         start_date=start_date,
         end_date=end_date
     )
